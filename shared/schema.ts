@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal, json } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -172,3 +173,77 @@ export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+
+// Database Relations
+export const usersRelations = relations(users, ({ one, many }) => ({
+  team: one(teams, { fields: [users.teamId], references: [teams.id] }),
+  player: many(players),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  manager: one(users, { fields: [teams.managerId], references: [users.id] }),
+  players: many(players),
+  homeMatches: many(matches, { relationName: "homeTeam" }),
+  awayMatches: many(matches, { relationName: "awayTeam" }),
+  availabilityRequests: many(availabilityRequests),
+  invoices: many(invoices),
+}));
+
+export const playersRelations = relations(players, ({ one, many }) => ({
+  user: one(users, { fields: [players.userId], references: [users.id] }),
+  team: one(teams, { fields: [players.teamId], references: [teams.id] }),
+  stats: many(playerStats),
+  availabilityResponses: many(availabilityResponses),
+  payments: many(payments),
+}));
+
+export const matchesRelations = relations(matches, ({ one, many }) => ({
+  homeTeam: one(teams, { fields: [matches.homeTeamId], references: [teams.id], relationName: "homeTeam" }),
+  awayTeam: one(teams, { fields: [matches.awayTeamId], references: [teams.id], relationName: "awayTeam" }),
+  winnerTeam: one(teams, { fields: [matches.winnerTeamId], references: [teams.id] }),
+  innings: many(innings),
+  playerStats: many(playerStats),
+  availabilityRequests: many(availabilityRequests),
+  payments: many(payments),
+  invoices: many(invoices),
+}));
+
+export const inningsRelations = relations(innings, ({ one, many }) => ({
+  match: one(matches, { fields: [innings.matchId], references: [matches.id] }),
+  battingTeam: one(teams, { fields: [innings.battingTeamId], references: [teams.id] }),
+  bowlingTeam: one(teams, { fields: [innings.bowlingTeamId], references: [teams.id] }),
+  balls: many(balls),
+}));
+
+export const ballsRelations = relations(balls, ({ one }) => ({
+  innings: one(innings, { fields: [balls.inningsId], references: [innings.id] }),
+  batsman: one(players, { fields: [balls.batsmanId], references: [players.id] }),
+  bowler: one(players, { fields: [balls.bowlerId], references: [players.id] }),
+  fielderInvolved: one(players, { fields: [balls.fielderInvolvedId], references: [players.id] }),
+}));
+
+export const playerStatsRelations = relations(playerStats, ({ one }) => ({
+  match: one(matches, { fields: [playerStats.matchId], references: [matches.id] }),
+  player: one(players, { fields: [playerStats.playerId], references: [players.id] }),
+}));
+
+export const availabilityRequestsRelations = relations(availabilityRequests, ({ one, many }) => ({
+  team: one(teams, { fields: [availabilityRequests.teamId], references: [teams.id] }),
+  match: one(matches, { fields: [availabilityRequests.matchId], references: [matches.id] }),
+  responses: many(availabilityResponses),
+}));
+
+export const availabilityResponsesRelations = relations(availabilityResponses, ({ one }) => ({
+  request: one(availabilityRequests, { fields: [availabilityResponses.requestId], references: [availabilityRequests.id] }),
+  player: one(players, { fields: [availabilityResponses.playerId], references: [players.id] }),
+}));
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  player: one(players, { fields: [payments.playerId], references: [players.id] }),
+  match: one(matches, { fields: [payments.matchId], references: [matches.id] }),
+}));
+
+export const invoicesRelations = relations(invoices, ({ one }) => ({
+  team: one(teams, { fields: [invoices.teamId], references: [teams.id] }),
+  match: one(matches, { fields: [invoices.matchId], references: [matches.id] }),
+}));

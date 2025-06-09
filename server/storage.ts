@@ -9,6 +9,8 @@ import {
   type AvailabilityResponse, type InsertAvailabilityResponse,
   type Payment, type InsertPayment, type Invoice, type InsertInvoice
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, count } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -80,7 +82,7 @@ export interface IStorage {
   getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]>;
 }
 
-export class MemStorage implements IStorage {
+export class DatabaseStorage implements IStorage {
   private users: Map<number, User> = new Map();
   private teams: Map<number, Team> = new Map();
   private players: Map<number, Player> = new Map();
@@ -513,4 +515,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
