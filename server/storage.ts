@@ -1,0 +1,398 @@
+import {
+  users, teams, players, matches, innings, balls, playerStats,
+  availabilityRequests, availabilityResponses, payments, invoices,
+  type User, type InsertUser, type Team, type InsertTeam,
+  type Player, type InsertPlayer, type Match, type InsertMatch,
+  type Innings, type InsertInnings, type Ball, type InsertBall,
+  type PlayerStats, type InsertPlayerStats,
+  type AvailabilityRequest, type InsertAvailabilityRequest,
+  type AvailabilityResponse, type InsertAvailabilityResponse,
+  type Payment, type InsertPayment, type Invoice, type InsertInvoice
+} from "@shared/schema";
+
+export interface IStorage {
+  // Users
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+
+  // Teams
+  getTeam(id: number): Promise<Team | undefined>;
+  getTeamsByManager(managerId: number): Promise<Team[]>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  getAllTeams(): Promise<Team[]>;
+
+  // Players
+  getPlayer(id: number): Promise<Player | undefined>;
+  getPlayersByTeam(teamId: number): Promise<Player[]>;
+  createPlayer(player: InsertPlayer): Promise<Player>;
+  updatePlayer(id: number, updates: Partial<Player>): Promise<Player | undefined>;
+  getActivePlayersByTeam(teamId: number): Promise<Player[]>;
+
+  // Matches
+  getMatch(id: number): Promise<Match | undefined>;
+  getMatchesByTeam(teamId: number): Promise<Match[]>;
+  createMatch(match: InsertMatch): Promise<Match>;
+  updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined>;
+  getRecentMatches(teamId: number, limit?: number): Promise<Match[]>;
+  getLiveMatches(): Promise<Match[]>;
+  getUpcomingMatches(teamId: number): Promise<Match[]>;
+
+  // Innings
+  getInnings(id: number): Promise<Innings | undefined>;
+  getInningsByMatch(matchId: number): Promise<Innings[]>;
+  createInnings(innings: InsertInnings): Promise<Innings>;
+  updateInnings(id: number, updates: Partial<Innings>): Promise<Innings | undefined>;
+
+  // Balls
+  getBall(id: number): Promise<Ball | undefined>;
+  getBallsByInnings(inningsId: number): Promise<Ball[]>;
+  createBall(ball: InsertBall): Promise<Ball>;
+
+  // Player Stats
+  getPlayerStats(id: number): Promise<PlayerStats | undefined>;
+  getPlayerStatsByMatch(matchId: number): Promise<PlayerStats[]>;
+  getPlayerStatsByPlayer(playerId: number): Promise<PlayerStats[]>;
+  createPlayerStats(stats: InsertPlayerStats): Promise<PlayerStats>;
+  updatePlayerStats(id: number, updates: Partial<PlayerStats>): Promise<PlayerStats | undefined>;
+
+  // Availability
+  getAvailabilityRequest(id: number): Promise<AvailabilityRequest | undefined>;
+  getAvailabilityRequestsByTeam(teamId: number): Promise<AvailabilityRequest[]>;
+  createAvailabilityRequest(request: InsertAvailabilityRequest): Promise<AvailabilityRequest>;
+  getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]>;
+  createAvailabilityResponse(response: InsertAvailabilityResponse): Promise<AvailabilityResponse>;
+  getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined>;
+
+  // Payments
+  getPayment(id: number): Promise<Payment | undefined>;
+  getPaymentsByPlayer(playerId: number): Promise<Payment[]>;
+  getPaymentsByMatch(matchId: number): Promise<Payment[]>;
+  createPayment(payment: InsertPayment): Promise<Payment>;
+  updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined>;
+  getPendingPaymentsByTeam(teamId: number): Promise<Payment[]>;
+
+  // Invoices
+  getInvoice(id: number): Promise<Invoice | undefined>;
+  getInvoicesByTeam(teamId: number): Promise<Invoice[]>;
+  createInvoice(invoice: InsertInvoice): Promise<Invoice>;
+  updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined>;
+  getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<number, User> = new Map();
+  private teams: Map<number, Team> = new Map();
+  private players: Map<number, Player> = new Map();
+  private matches: Map<number, Match> = new Map();
+  private innings: Map<number, Innings> = new Map();
+  private balls: Map<number, Ball> = new Map();
+  private playerStats: Map<number, PlayerStats> = new Map();
+  private availabilityRequests: Map<number, AvailabilityRequest> = new Map();
+  private availabilityResponses: Map<number, AvailabilityResponse> = new Map();
+  private payments: Map<number, Payment> = new Map();
+  private invoices: Map<number, Invoice> = new Map();
+
+  private currentUserId = 1;
+  private currentTeamId = 1;
+  private currentPlayerId = 1;
+  private currentMatchId = 1;
+  private currentInningsId = 1;
+  private currentBallId = 1;
+  private currentPlayerStatsId = 1;
+  private currentAvailabilityRequestId = 1;
+  private currentAvailabilityResponseId = 1;
+  private currentPaymentId = 1;
+  private currentInvoiceId = 1;
+
+  // Users
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const user: User = { ...insertUser, id: this.currentUserId++ };
+    this.users.set(user.id, user);
+    return user;
+  }
+
+  // Teams
+  async getTeam(id: number): Promise<Team | undefined> {
+    return this.teams.get(id);
+  }
+
+  async getTeamsByManager(managerId: number): Promise<Team[]> {
+    return Array.from(this.teams.values()).filter(team => team.managerId === managerId);
+  }
+
+  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+    const team: Team = { 
+      ...insertTeam, 
+      id: this.currentTeamId++,
+      createdAt: new Date()
+    };
+    this.teams.set(team.id, team);
+    return team;
+  }
+
+  async getAllTeams(): Promise<Team[]> {
+    return Array.from(this.teams.values());
+  }
+
+  // Players
+  async getPlayer(id: number): Promise<Player | undefined> {
+    return this.players.get(id);
+  }
+
+  async getPlayersByTeam(teamId: number): Promise<Player[]> {
+    return Array.from(this.players.values()).filter(player => player.teamId === teamId);
+  }
+
+  async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
+    const player: Player = { ...insertPlayer, id: this.currentPlayerId++ };
+    this.players.set(player.id, player);
+    return player;
+  }
+
+  async updatePlayer(id: number, updates: Partial<Player>): Promise<Player | undefined> {
+    const player = this.players.get(id);
+    if (!player) return undefined;
+    const updatedPlayer = { ...player, ...updates };
+    this.players.set(id, updatedPlayer);
+    return updatedPlayer;
+  }
+
+  async getActivePlayersByTeam(teamId: number): Promise<Player[]> {
+    return Array.from(this.players.values()).filter(
+      player => player.teamId === teamId && player.isActive
+    );
+  }
+
+  // Matches
+  async getMatch(id: number): Promise<Match | undefined> {
+    return this.matches.get(id);
+  }
+
+  async getMatchesByTeam(teamId: number): Promise<Match[]> {
+    return Array.from(this.matches.values()).filter(
+      match => match.homeTeamId === teamId || match.awayTeamId === teamId
+    );
+  }
+
+  async createMatch(insertMatch: InsertMatch): Promise<Match> {
+    const match: Match = { ...insertMatch, id: this.currentMatchId++ };
+    this.matches.set(match.id, match);
+    return match;
+  }
+
+  async updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined> {
+    const match = this.matches.get(id);
+    if (!match) return undefined;
+    const updatedMatch = { ...match, ...updates };
+    this.matches.set(id, updatedMatch);
+    return updatedMatch;
+  }
+
+  async getRecentMatches(teamId: number, limit = 10): Promise<Match[]> {
+    return Array.from(this.matches.values())
+      .filter(match => match.homeTeamId === teamId || match.awayTeamId === teamId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, limit);
+  }
+
+  async getLiveMatches(): Promise<Match[]> {
+    return Array.from(this.matches.values()).filter(match => match.status === 'live');
+  }
+
+  async getUpcomingMatches(teamId: number): Promise<Match[]> {
+    return Array.from(this.matches.values())
+      .filter(match => 
+        (match.homeTeamId === teamId || match.awayTeamId === teamId) && 
+        match.status === 'scheduled'
+      )
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
+  // Innings
+  async getInnings(id: number): Promise<Innings | undefined> {
+    return this.innings.get(id);
+  }
+
+  async getInningsByMatch(matchId: number): Promise<Innings[]> {
+    return Array.from(this.innings.values()).filter(innings => innings.matchId === matchId);
+  }
+
+  async createInnings(insertInnings: InsertInnings): Promise<Innings> {
+    const innings: Innings = { ...insertInnings, id: this.currentInningsId++ };
+    this.innings.set(innings.id, innings);
+    return innings;
+  }
+
+  async updateInnings(id: number, updates: Partial<Innings>): Promise<Innings | undefined> {
+    const innings = this.innings.get(id);
+    if (!innings) return undefined;
+    const updatedInnings = { ...innings, ...updates };
+    this.innings.set(id, updatedInnings);
+    return updatedInnings;
+  }
+
+  // Balls
+  async getBall(id: number): Promise<Ball | undefined> {
+    return this.balls.get(id);
+  }
+
+  async getBallsByInnings(inningsId: number): Promise<Ball[]> {
+    return Array.from(this.balls.values())
+      .filter(ball => ball.inningsId === inningsId)
+      .sort((a, b) => {
+        if (a.overNumber !== b.overNumber) return a.overNumber - b.overNumber;
+        return a.ballNumber - b.ballNumber;
+      });
+  }
+
+  async createBall(insertBall: InsertBall): Promise<Ball> {
+    const ball: Ball = { ...insertBall, id: this.currentBallId++ };
+    this.balls.set(ball.id, ball);
+    return ball;
+  }
+
+  // Player Stats
+  async getPlayerStats(id: number): Promise<PlayerStats | undefined> {
+    return this.playerStats.get(id);
+  }
+
+  async getPlayerStatsByMatch(matchId: number): Promise<PlayerStats[]> {
+    return Array.from(this.playerStats.values()).filter(stats => stats.matchId === matchId);
+  }
+
+  async getPlayerStatsByPlayer(playerId: number): Promise<PlayerStats[]> {
+    return Array.from(this.playerStats.values()).filter(stats => stats.playerId === playerId);
+  }
+
+  async createPlayerStats(insertStats: InsertPlayerStats): Promise<PlayerStats> {
+    const stats: PlayerStats = { ...insertStats, id: this.currentPlayerStatsId++ };
+    this.playerStats.set(stats.id, stats);
+    return stats;
+  }
+
+  async updatePlayerStats(id: number, updates: Partial<PlayerStats>): Promise<PlayerStats | undefined> {
+    const stats = this.playerStats.get(id);
+    if (!stats) return undefined;
+    const updatedStats = { ...stats, ...updates };
+    this.playerStats.set(id, updatedStats);
+    return updatedStats;
+  }
+
+  // Availability
+  async getAvailabilityRequest(id: number): Promise<AvailabilityRequest | undefined> {
+    return this.availabilityRequests.get(id);
+  }
+
+  async getAvailabilityRequestsByTeam(teamId: number): Promise<AvailabilityRequest[]> {
+    return Array.from(this.availabilityRequests.values())
+      .filter(request => request.teamId === teamId)
+      .sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+  }
+
+  async createAvailabilityRequest(insertRequest: InsertAvailabilityRequest): Promise<AvailabilityRequest> {
+    const request: AvailabilityRequest = { ...insertRequest, id: this.currentAvailabilityRequestId++ };
+    this.availabilityRequests.set(request.id, request);
+    return request;
+  }
+
+  async getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]> {
+    return Array.from(this.availabilityResponses.values()).filter(response => response.requestId === requestId);
+  }
+
+  async createAvailabilityResponse(insertResponse: InsertAvailabilityResponse): Promise<AvailabilityResponse> {
+    const response: AvailabilityResponse = { 
+      ...insertResponse, 
+      id: this.currentAvailabilityResponseId++,
+      responseDate: new Date()
+    };
+    this.availabilityResponses.set(response.id, response);
+    return response;
+  }
+
+  async getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined> {
+    return Array.from(this.availabilityResponses.values()).find(
+      response => response.requestId === requestId && response.playerId === playerId
+    );
+  }
+
+  // Payments
+  async getPayment(id: number): Promise<Payment | undefined> {
+    return this.payments.get(id);
+  }
+
+  async getPaymentsByPlayer(playerId: number): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(payment => payment.playerId === playerId);
+  }
+
+  async getPaymentsByMatch(matchId: number): Promise<Payment[]> {
+    return Array.from(this.payments.values()).filter(payment => payment.matchId === matchId);
+  }
+
+  async createPayment(insertPayment: InsertPayment): Promise<Payment> {
+    const payment: Payment = { ...insertPayment, id: this.currentPaymentId++ };
+    this.payments.set(payment.id, payment);
+    return payment;
+  }
+
+  async updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const payment = this.payments.get(id);
+    if (!payment) return undefined;
+    const updatedPayment = { ...payment, ...updates };
+    this.payments.set(id, updatedPayment);
+    return updatedPayment;
+  }
+
+  async getPendingPaymentsByTeam(teamId: number): Promise<Payment[]> {
+    const teamPlayers = await this.getPlayersByTeam(teamId);
+    const playerIds = teamPlayers.map(p => p.id);
+    return Array.from(this.payments.values()).filter(
+      payment => playerIds.includes(payment.playerId) && payment.status === 'pending'
+    );
+  }
+
+  // Invoices
+  async getInvoice(id: number): Promise<Invoice | undefined> {
+    return this.invoices.get(id);
+  }
+
+  async getInvoicesByTeam(teamId: number): Promise<Invoice[]> {
+    return Array.from(this.invoices.values())
+      .filter(invoice => invoice.teamId === teamId)
+      .sort((a, b) => new Date(b.issueDate!).getTime() - new Date(a.issueDate!).getTime());
+  }
+
+  async createInvoice(insertInvoice: InsertInvoice): Promise<Invoice> {
+    const invoice: Invoice = { 
+      ...insertInvoice, 
+      id: this.currentInvoiceId++,
+      issueDate: new Date()
+    };
+    this.invoices.set(invoice.id, invoice);
+    return invoice;
+  }
+
+  async updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined> {
+    const invoice = this.invoices.get(id);
+    if (!invoice) return undefined;
+    const updatedInvoice = { ...invoice, ...updates };
+    this.invoices.set(id, updatedInvoice);
+    return updatedInvoice;
+  }
+
+  async getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]> {
+    return Array.from(this.invoices.values()).filter(
+      invoice => invoice.teamId === teamId && invoice.status !== 'paid'
+    );
+  }
+}
+
+export const storage = new MemStorage();
