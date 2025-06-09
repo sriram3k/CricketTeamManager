@@ -82,7 +82,7 @@ export interface IStorage {
   getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MemStorage implements IStorage {
   private users: Map<number, User> = new Map();
   private teams: Map<number, Team> = new Map();
   private players: Map<number, Player> = new Map();
@@ -235,7 +235,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const user: User = { ...insertUser, id: this.currentUserId++ };
+    const user: User = { 
+      ...insertUser, 
+      id: this.currentUserId++,
+      role: insertUser.role || "player",
+      teamId: insertUser.teamId || null
+    };
     this.users.set(user.id, user);
     return user;
   }
@@ -253,7 +258,8 @@ export class DatabaseStorage implements IStorage {
     const team: Team = { 
       ...insertTeam, 
       id: this.currentTeamId++,
-      createdAt: new Date()
+      createdAt: new Date(),
+      description: insertTeam.description || null
     };
     this.teams.set(team.id, team);
     return team;
@@ -515,4 +521,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

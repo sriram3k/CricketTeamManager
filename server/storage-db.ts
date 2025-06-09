@@ -1,5 +1,6 @@
 import {
-  users, teams, players, matches, innings, balls, playerStats,
+  users, teams, players, matches, 
+  innings as inningsTable, balls, playerStats,
   availabilityRequests, availabilityResponses, payments, invoices,
   type User, type InsertUser, type Team, type InsertTeam,
   type Player, type InsertPlayer, type Match, type InsertMatch,
@@ -241,21 +242,21 @@ export class DatabaseStorage implements IStorage {
 
   // Innings
   async getInnings(id: number): Promise<Innings | undefined> {
-    const [innings] = await db.select().from(innings).where(eq(innings.id, id));
-    return innings || undefined;
+    const [inning] = await db.select().from(inningsTable).where(eq(inningsTable.id, id));
+    return inning || undefined;
   }
 
   async getInningsByMatch(matchId: number): Promise<Innings[]> {
-    return await db.select().from(innings).where(eq(innings.matchId, matchId));
+    return await db.select().from(inningsTable).where(eq(inningsTable.matchId, matchId));
   }
 
   async createInnings(insertInnings: InsertInnings): Promise<Innings> {
-    const [inning] = await db.insert(innings).values(insertInnings).returning();
+    const [inning] = await db.insert(inningsTable).values(insertInnings).returning();
     return inning;
   }
 
   async updateInnings(id: number, updates: Partial<Innings>): Promise<Innings | undefined> {
-    const [inning] = await db.update(innings).set(updates).where(eq(innings.id, id)).returning();
+    const [inning] = await db.update(inningsTable).set(updates).where(eq(inningsTable.id, id)).returning();
     return inning || undefined;
   }
 
