@@ -13,7 +13,8 @@ import {
   Play,
   Check,
   Clock,
-  X
+  X,
+  Target
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -42,10 +43,10 @@ export default function Dashboard() {
       <div className="md:flex md:items-center md:justify-between">
         <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-bold leading-7 text-foreground sm:text-3xl sm:truncate">
-            Welcome back, Team Manager
+            Team Command Centre
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Mumbai Warriors • Today, {new Date().toLocaleDateString('en-US', { 
+            Mumbai Warriors • Match Day Ready • {new Date().toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
               month: 'long', 
@@ -53,10 +54,14 @@ export default function Dashboard() {
             })}
           </p>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
+        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
+          <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
+            <Target className="h-4 w-4 mr-2" />
+            Quick Score
+          </Button>
           <Button className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
-            Start New Match
+            Schedule Match
           </Button>
         </div>
       </div>

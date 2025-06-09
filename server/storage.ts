@@ -109,9 +109,9 @@ export class MemStorage implements IStorage {
     this.initializeSampleData();
   }
 
-  private initializeSampleData() {
-    // Create sample users
-    const manager = this.createUser({
+  private async initializeSampleData() {
+    // Create sample users with await to ensure proper sequencing
+    await this.createUser({
       username: "manager",
       password: "password",
       role: "manager",
@@ -119,7 +119,7 @@ export class MemStorage implements IStorage {
     });
 
     // Create sample team
-    const team = this.createTeam({
+    await this.createTeam({
       name: "Mumbai Warriors",
       managerId: 1,
       description: "Professional cricket team based in Mumbai"
@@ -137,14 +137,16 @@ export class MemStorage implements IStorage {
       { name: "Mohammed Shami", position: "bowler", jerseyNumber: 11, userId: 9, teamId: 1, isActive: true },
     ];
 
-    players.forEach(player => this.createPlayer(player));
+    for (const player of players) {
+      await this.createPlayer(player);
+    }
 
     // Create sample matches
     const today = new Date();
     const pastMatch = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
     const futureMatch = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
 
-    this.createMatch({
+    await this.createMatch({
       homeTeamId: 1,
       awayTeamId: 2,
       date: pastMatch,
@@ -159,7 +161,7 @@ export class MemStorage implements IStorage {
       matchFee: "5000.00"
     });
 
-    this.createMatch({
+    await this.createMatch({
       homeTeamId: 1,
       awayTeamId: 3,
       date: futureMatch,
@@ -175,7 +177,7 @@ export class MemStorage implements IStorage {
     });
 
     // Create sample availability request
-    this.createAvailabilityRequest({
+    await this.createAvailabilityRequest({
       teamId: 1,
       matchId: 2,
       requestDate: new Date(),
@@ -187,7 +189,7 @@ export class MemStorage implements IStorage {
     });
 
     // Create sample payments
-    this.createPayment({
+    await this.createPayment({
       playerId: 1,
       matchId: 1,
       amount: "500.00",
@@ -197,7 +199,7 @@ export class MemStorage implements IStorage {
       paymentMethod: null
     });
 
-    this.createPayment({
+    await this.createPayment({
       playerId: 2,
       matchId: 1,
       amount: "500.00",
@@ -208,7 +210,7 @@ export class MemStorage implements IStorage {
     });
 
     // Create sample invoice
-    this.createInvoice({
+    await this.createInvoice({
       teamId: 1,
       matchId: 1,
       invoiceNumber: "INV-2024-001",

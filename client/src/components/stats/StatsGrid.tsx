@@ -13,32 +13,32 @@ interface StatsGridProps {
 export default function StatsGrid({ stats }: StatsGridProps) {
   const statsData = [
     {
-      title: "Matches Won",
+      title: "Victories",
       value: stats?.matchesWon || 0,
       icon: Trophy,
-      bgColor: "bg-secondary",
-      textColor: "text-secondary-foreground",
+      bgColor: "bg-green-100 dark:bg-green-900/20",
+      textColor: "text-green-600 dark:text-green-400",
     },
     {
-      title: "Active Players",
+      title: "Squad Members",
       value: stats?.activePlayers || 0,
       icon: Users,
-      bgColor: "bg-accent",
-      textColor: "text-accent-foreground",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
+      textColor: "text-blue-600 dark:text-blue-400",
     },
     {
-      title: "Upcoming Matches",
+      title: "Fixtures",
       value: stats?.upcomingMatches || 0,
       icon: Calendar,
-      bgColor: "bg-primary",
-      textColor: "text-primary-foreground",
+      bgColor: "bg-orange-100 dark:bg-orange-900/20",
+      textColor: "text-orange-600 dark:text-orange-400",
     },
     {
-      title: "Pending Payments",
+      title: "Outstanding Fees",
       value: stats?.pendingPayments ? `₹${stats.pendingPayments.toLocaleString()}` : "₹0",
       icon: DollarSign,
-      bgColor: "bg-accent",
-      textColor: "text-accent-foreground",
+      bgColor: "bg-red-100 dark:bg-red-900/20",
+      textColor: "text-red-600 dark:text-red-400",
     },
   ];
 

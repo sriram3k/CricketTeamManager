@@ -28,15 +28,15 @@ export default function MobileNavigation() {
           
           return (
             <Link key={item.name} href={item.href}>
-              <a
+              <div
                 className={cn(
-                  "flex flex-col items-center py-2 px-1 transition-colors",
+                  "flex flex-col items-center py-2 px-1 transition-colors cursor-pointer",
                   isActive ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5" />
                 <span className="text-xs mt-1">{item.name}</span>
-              </a>
+              </div>
             </Link>
           );
         })}
