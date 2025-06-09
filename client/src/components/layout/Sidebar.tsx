@@ -2,23 +2,24 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   Trophy,
-  PlayCircle,
+  Target,
   Users,
   CalendarCheck,
   CreditCard,
   FileText,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  Zap
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
-  { name: "Live Scoring", href: "/live-scoring", icon: PlayCircle },
-  { name: "Player Management", href: "/players", icon: Users },
-  { name: "Availability", href: "/availability", icon: CalendarCheck },
-  { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "Invoices", href: "/invoices", icon: FileText },
-  { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Team Overview", href: "/", icon: BarChart3 },
+  { name: "Live Match", href: "/live-scoring", icon: Target },
+  { name: "Squad", href: "/players", icon: Users },
+  { name: "Player Availability", href: "/availability", icon: CalendarCheck },
+  { name: "Match Fees", href: "/payments", icon: CreditCard },
+  { name: "Club Invoices", href: "/invoices", icon: FileText },
+  { name: "Performance Stats", href: "/analytics", icon: TrendingUp },
 ];
 
 export default function Sidebar() {
@@ -30,7 +31,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center h-16 flex-shrink-0 px-4 bg-primary">
           <Trophy className="text-primary-foreground text-2xl mr-3" />
-          <h1 className="text-primary-foreground text-xl font-bold">CricketPro</h1>
+          <h1 className="text-primary-foreground text-xl font-bold">CricManager</h1>
         </div>
         
         {/* Navigation */}
@@ -41,15 +42,15 @@ export default function Sidebar() {
             
             return (
               <Link key={item.name} href={item.href}>
-                <a
+                <div
                   className={cn(
-                    "sidebar-link",
+                    "sidebar-link cursor-pointer",
                     isActive ? "sidebar-link-active" : "sidebar-link-inactive"
                   )}
                 >
                   <Icon className="mr-3 h-5 w-5" />
                   {item.name}
-                </a>
+                </div>
               </Link>
             );
           })}

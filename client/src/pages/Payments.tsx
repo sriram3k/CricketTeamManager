@@ -274,7 +274,7 @@ export default function Payments() {
               <SelectValue placeholder="Select a player to view their payments" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Players</SelectItem>
+              <SelectItem value="all">All Players</SelectItem>
               {players?.map((player: any) => (
                 <SelectItem key={player.id} value={player.id.toString()}>
                   {player.name}

@@ -2,18 +2,18 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
-  PlayCircle,
+  Target,
   Users,
   CreditCard,
   TrendingUp
 } from "lucide-react";
 
 const mobileNavigation = [
-  { name: "Dashboard", href: "/", icon: BarChart3 },
-  { name: "Scoring", href: "/live-scoring", icon: PlayCircle },
-  { name: "Players", href: "/players", icon: Users },
-  { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "Analytics", href: "/analytics", icon: TrendingUp },
+  { name: "Overview", href: "/", icon: BarChart3 },
+  { name: "Live", href: "/live-scoring", icon: Target },
+  { name: "Squad", href: "/players", icon: Users },
+  { name: "Fees", href: "/payments", icon: CreditCard },
+  { name: "Stats", href: "/analytics", icon: TrendingUp },
 ];
 
 export default function MobileNavigation() {

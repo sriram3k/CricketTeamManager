@@ -105,6 +105,122 @@ export class MemStorage implements IStorage {
   private currentPaymentId = 1;
   private currentInvoiceId = 1;
 
+  constructor() {
+    this.initializeSampleData();
+  }
+
+  private initializeSampleData() {
+    // Create sample users
+    const manager = this.createUser({
+      username: "manager",
+      password: "password",
+      role: "manager",
+      teamId: 1
+    });
+
+    // Create sample team
+    const team = this.createTeam({
+      name: "Mumbai Warriors",
+      managerId: 1,
+      description: "Professional cricket team based in Mumbai"
+    });
+
+    // Create sample players
+    const players = [
+      { name: "Rohit Sharma", position: "batsman", jerseyNumber: 45, userId: 2, teamId: 1, isActive: true },
+      { name: "Jasprit Bumrah", position: "bowler", jerseyNumber: 93, userId: 3, teamId: 1, isActive: true },
+      { name: "Hardik Pandya", position: "all-rounder", jerseyNumber: 33, userId: 4, teamId: 1, isActive: true },
+      { name: "MS Dhoni", position: "wicket-keeper", jerseyNumber: 7, userId: 5, teamId: 1, isActive: true },
+      { name: "Virat Kohli", position: "batsman", jerseyNumber: 18, userId: 6, teamId: 1, isActive: true },
+      { name: "Ravindra Jadeja", position: "all-rounder", jerseyNumber: 8, userId: 7, teamId: 1, isActive: true },
+      { name: "Shikhar Dhawan", position: "batsman", jerseyNumber: 25, userId: 8, teamId: 1, isActive: true },
+      { name: "Mohammed Shami", position: "bowler", jerseyNumber: 11, userId: 9, teamId: 1, isActive: true },
+    ];
+
+    players.forEach(player => this.createPlayer(player));
+
+    // Create sample matches
+    const today = new Date();
+    const pastMatch = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000); // 7 days ago
+    const futureMatch = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+
+    this.createMatch({
+      homeTeamId: 1,
+      awayTeamId: 2,
+      date: pastMatch,
+      venue: "Wankhede Stadium, Mumbai",
+      status: "completed",
+      tossWinner: 1,
+      tossDecision: "bat",
+      matchType: "T20",
+      totalOvers: 20,
+      result: "Mumbai Warriors won by 6 wickets",
+      winnerTeamId: 1,
+      matchFee: "5000.00"
+    });
+
+    this.createMatch({
+      homeTeamId: 1,
+      awayTeamId: 3,
+      date: futureMatch,
+      venue: "Eden Gardens, Kolkata",
+      status: "scheduled",
+      tossWinner: null,
+      tossDecision: null,
+      matchType: "T20",
+      totalOvers: 20,
+      result: null,
+      winnerTeamId: null,
+      matchFee: "6000.00"
+    });
+
+    // Create sample availability request
+    this.createAvailabilityRequest({
+      teamId: 1,
+      matchId: 2,
+      requestDate: new Date(),
+      matchDate: futureMatch,
+      venue: "Eden Gardens, Kolkata",
+      opponent: "Kolkata Titans",
+      deadline: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+      message: "Important T20 match against Kolkata Titans. Please confirm your availability."
+    });
+
+    // Create sample payments
+    this.createPayment({
+      playerId: 1,
+      matchId: 1,
+      amount: "500.00",
+      status: "pending",
+      dueDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+      paidDate: null,
+      paymentMethod: null
+    });
+
+    this.createPayment({
+      playerId: 2,
+      matchId: 1,
+      amount: "500.00",
+      status: "paid",
+      dueDate: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000),
+      paidDate: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000),
+      paymentMethod: "upi"
+    });
+
+    // Create sample invoice
+    this.createInvoice({
+      teamId: 1,
+      matchId: 1,
+      invoiceNumber: "INV-2024-001",
+      amount: "25000.00",
+      description: "Cricket match organizing services including venue booking, equipment, and match officials for T20 match at Wankhede Stadium",
+      dueDate: new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000),
+      status: "sent",
+      paidDate: null,
+      corporateId: 1
+    });
+  }
+
   // Users
   async getUser(id: number): Promise<User | undefined> {
     return this.users.get(id);

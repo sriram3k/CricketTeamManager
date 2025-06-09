@@ -3,29 +3,30 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 98%);
-  --foreground: hsl(240, 10%, 3.9%);
-  --muted: hsl(210, 40%, 96%);
-  --muted-foreground: hsl(215, 16%, 47%);
+  /* Cricket-inspired color scheme */
+  --background: hsl(150, 20%, 97%); /* Light cream like cricket whites */
+  --foreground: hsl(120, 10%, 15%); /* Dark green like cricket pitch */
+  --muted: hsl(150, 15%, 93%);
+  --muted-foreground: hsl(120, 8%, 45%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(120, 10%, 15%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(240, 10%, 3.9%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(122, 39%, 49%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(36, 100%, 50%);
-  --accent-foreground: hsl(210, 40%, 98%);
+  --card-foreground: hsl(120, 10%, 15%);
+  --border: hsl(150, 20%, 85%);
+  --input: hsl(150, 20%, 90%);
+  --primary: hsl(120, 50%, 25%); /* Cricket pitch green */
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(30, 80%, 45%); /* Cricket ball orange/brown */
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(45, 90%, 55%); /* Golden stumps color */
+  --accent-foreground: hsl(120, 10%, 15%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(207, 90%, 54%);
+  --ring: hsl(120, 50%, 25%);
   --radius: 0.5rem;
-  --chart-1: hsl(207, 90%, 54%);
-  --chart-2: hsl(122, 39%, 49%);
-  --chart-3: hsl(36, 100%, 50%);
+  --chart-1: hsl(120, 50%, 25%);
+  --chart-2: hsl(30, 80%, 45%);
+  --chart-3: hsl(45, 90%, 55%);
   --chart-4: hsl(280, 65%, 60%);
   --chart-5: hsl(0, 84%, 60%);
 }
