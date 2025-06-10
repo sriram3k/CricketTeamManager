@@ -285,7 +285,8 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Upcoming Matches</h4>
                   <div className="space-y-2">
-                    {upcomingMatches && Array.isArray(upcomingMatches) ? upcomingMatches.slice(0, 3).map((match: any) => (
+                    {upcomingMatches && Array.isArray(upcomingMatches) ? upcomingMatches.slice(0, 3).map((match: any) => {
+                      return (
                       <Link key={match.id} href="/live-scoring">
                         <Button 
                           variant="outline" 
@@ -300,7 +301,8 @@ export default function Dashboard() {
                           </div>
                         </Button>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -521,7 +523,8 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentMatches && Array.isArray(recentMatches) ? recentMatches.slice(0, 4).map((match: any) => (
+                {recentMatches && Array.isArray(recentMatches) ? recentMatches.slice(0, 4).map((match: any) => {
+                  return (
                   <div key={match.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
