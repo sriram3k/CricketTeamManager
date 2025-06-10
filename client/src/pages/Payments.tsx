@@ -128,13 +128,16 @@ export default function Payments() {
   const playersArray = Array.isArray(players) ? players : [];
   const playerPaymentsArray = Array.isArray(playerPayments) ? playerPayments : [];
 
-  const totalPending = paymentsArray.reduce((total: number, payment: any) => 
-    total + parseFloat(payment.amount), 0
-  );
+  const totalPending = paymentsArray.reduce((total: number, payment: any) => {
+    const amount = payment.payments?.amount || payment.amount;
+    return total + (amount ? parseFloat(amount) : 0);
+  }, 0);
 
-  const overduePayments = paymentsArray.filter((payment: any) => 
-    new Date(payment.dueDate) < new Date()
-  );
+  const overduePayments = paymentsArray.filter((payment: any) => {
+    const dueDate = payment.payments?.dueDate || payment.dueDate;
+    const status = payment.payments?.status || payment.status;
+    return dueDate && new Date(dueDate) < new Date() && status === 'pending';
+  });
 
   return (
     <div className="space-y-6">
@@ -336,42 +339,51 @@ export default function Payments() {
             </TableHeader>
             <TableBody>
               {(selectedPlayer && selectedPlayer !== "all" ? playerPaymentsArray : paymentsArray).map((payment: any) => {
-                const player = playersArray.find((p: any) => p.id === payment.playerId);
-                const isOverdue = new Date(payment.dueDate) < new Date() && payment.status === 'pending';
+                // Handle nested payment data structure
+                const paymentData = payment.payments || payment;
+                const playerId = paymentData.playerId || payment.playerId;
+                const player = playersArray.find((p: any) => p.id === playerId);
+                const amount = paymentData.amount || payment.amount;
+                const dueDate = paymentData.dueDate || payment.dueDate;
+                const status = paymentData.status || payment.status;
+                const paidDate = paymentData.paidDate || payment.paidDate;
+                const paymentId = paymentData.id || payment.id;
+                
+                const isOverdue = dueDate && new Date(dueDate) < new Date() && status === 'pending';
                 
                 return (
-                  <TableRow key={payment.id}>
+                  <TableRow key={paymentId}>
                     <TableCell className="font-medium">
                       {player?.name || 'Unknown Player'}
                     </TableCell>
-                    <TableCell>S${parseFloat(payment.amount).toLocaleString()}</TableCell>
+                    <TableCell>S${amount ? parseFloat(amount).toLocaleString() : '0'}</TableCell>
                     <TableCell>
-                      {new Date(payment.dueDate).toLocaleDateString()}
+                      {dueDate ? new Date(dueDate).toLocaleDateString() : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Badge 
                         variant={
-                          payment.status === 'paid' ? 'default' : 
+                          status === 'paid' ? 'default' : 
                           isOverdue ? 'destructive' : 'secondary'
                         }
                       >
-                        {payment.status === 'paid' ? 'Paid' : 
+                        {status === 'paid' ? 'Paid' : 
                          isOverdue ? 'Overdue' : 'Pending'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {payment.status === 'pending' && (
+                      {status === 'pending' && (
                         <Button
                           size="sm"
-                          onClick={() => markAsPaid(payment.id)}
+                          onClick={() => markAsPaid(paymentId)}
                           disabled={updatePaymentMutation.isPending}
                         >
                           Mark as Paid
                         </Button>
                       )}
-                      {payment.status === 'paid' && payment.paidDate && (
+                      {status === 'paid' && paidDate && (
                         <span className="text-sm text-muted-foreground">
-                          Paid on {new Date(payment.paidDate).toLocaleDateString()}
+                          Paid on {new Date(paidDate).toLocaleDateString()}
                         </span>
                       )}
                     </TableCell>
