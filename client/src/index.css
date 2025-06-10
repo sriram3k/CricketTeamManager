@@ -97,3 +97,23 @@
     opacity: 0.5;
   }
 }
+
+/* Onboarding Tour Styles */
+.tour-highlight {
+  position: relative;
+  z-index: 40;
+  border: 2px solid hsl(var(--primary));
+  border-radius: 8px;
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+  background: hsl(var(--background));
+  animation: tour-pulse 2s infinite;
+}
+
+@keyframes tour-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0.1);
+  }
+}

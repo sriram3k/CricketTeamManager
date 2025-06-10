@@ -13,13 +13,13 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Team Overview", href: "/", icon: BarChart3 },
-  { name: "Live Match", href: "/live-scoring", icon: Target },
-  { name: "Squad", href: "/players", icon: Users },
-  { name: "Player Availability", href: "/availability", icon: CalendarCheck },
-  { name: "Match Fees", href: "/payments", icon: CreditCard },
-  { name: "Club Invoices", href: "/invoices", icon: FileText },
-  { name: "Performance Stats", href: "/analytics", icon: TrendingUp },
+  { name: "Team Overview", href: "/", icon: BarChart3, dataTour: "dashboard" },
+  { name: "Live Match", href: "/live-scoring", icon: Target, dataTour: "live-scoring" },
+  { name: "Squad", href: "/players", icon: Users, dataTour: "players" },
+  { name: "Player Availability", href: "/availability", icon: CalendarCheck, dataTour: "availability" },
+  { name: "Match Fees", href: "/payments", icon: CreditCard, dataTour: "payments" },
+  { name: "Club Invoices", href: "/invoices", icon: FileText, dataTour: "invoices" },
+  { name: "Performance Stats", href: "/analytics", icon: TrendingUp, dataTour: "analytics" },
 ];
 
 export default function Sidebar() {

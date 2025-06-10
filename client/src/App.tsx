@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -12,8 +13,20 @@ import Payments from "@/pages/Payments";
 import Invoices from "@/pages/Invoices";
 import Analytics from "@/pages/Analytics";
 import AppLayout from "@/components/layout/AppLayout";
+import OnboardingTour from "@/components/onboarding/OnboardingTour";
 
 function Router() {
+  const [isTourOpen, setIsTourOpen] = useState(false);
+
+  useEffect(() => {
+    // Check if user has completed the tour
+    const tourCompleted = localStorage.getItem('cricmanager-tour-completed');
+    if (!tourCompleted) {
+      // Start tour after a short delay
+      setTimeout(() => setIsTourOpen(true), 1000);
+    }
+  }, []);
+
   return (
     <AppLayout>
       <Switch>
@@ -26,6 +39,7 @@ function Router() {
         <Route path="/analytics" component={Analytics} />
         <Route component={NotFound} />
       </Switch>
+      <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
     </AppLayout>
   );
 }
