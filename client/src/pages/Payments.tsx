@@ -297,7 +297,7 @@ export default function Payments() {
       <Card>
         <CardHeader>
           <CardTitle>
-            {selectedPlayer ? "Player Payment History" : "Pending Payments"}
+            {selectedPlayer && selectedPlayer !== "all" ? "Player Payment History" : "Pending Payments"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -312,7 +312,7 @@ export default function Payments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(selectedPlayer ? playerPaymentsArray : paymentsArray).map((payment: any) => {
+              {(selectedPlayer && selectedPlayer !== "all" ? playerPaymentsArray : paymentsArray).map((payment: any) => {
                 const player = playersArray.find((p: any) => p.id === payment.playerId);
                 const isOverdue = new Date(payment.dueDate) < new Date() && payment.status === 'pending';
                 
@@ -366,7 +366,7 @@ export default function Payments() {
             </div>
           )}
           
-          {selectedPlayer && playerPaymentsArray.length === 0 && (
+          {selectedPlayer && selectedPlayer !== "all" && playerPaymentsArray.length === 0 && (
             <div className="text-center py-8">
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">No Payment History</h3>
