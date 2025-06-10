@@ -141,7 +141,9 @@ export const invoices = pgTable("invoices", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
 export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
-export const insertMatchSchema = createInsertSchema(matches).omit({ id: true });
+export const insertMatchSchema = createInsertSchema(matches).omit({ id: true }).extend({
+  date: z.string().transform((val) => new Date(val)),
+});
 export const insertInningsSchema = createInsertSchema(innings).omit({ id: true });
 export const insertBallSchema = createInsertSchema(balls).omit({ id: true });
 export const insertPlayerStatsSchema = createInsertSchema(playerStats).omit({ id: true });
