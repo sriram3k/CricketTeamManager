@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import LiveScoring from "@/pages/LiveScoring";
 import PlayerManagement from "@/pages/PlayerManagement";
+import TeamManagement from "@/pages/TeamManagement";
 import Availability from "@/pages/Availability";
 import Payments from "@/pages/Payments";
 import Invoices from "@/pages/Invoices";
@@ -62,6 +63,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/live-scoring" component={LiveScoring} />
+        <Route path="/team-management" component={TeamManagement} />
         <Route path="/player-management" component={PlayerManagement} />
         <Route path="/availability" component={Availability} />
         <Route path="/payments" component={Payments} />

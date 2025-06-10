@@ -29,6 +29,13 @@ const navigation = [
     dataTour: "live-scoring" 
   },
   { 
+    name: "Team Management", 
+    description: "Create & manage your teams",
+    href: "/team-management", 
+    icon: Trophy, 
+    dataTour: "teams" 
+  },
+  { 
     name: "Player Management", 
     description: "Team roster & player details",
     href: "/player-management", 

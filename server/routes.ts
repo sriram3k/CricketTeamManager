@@ -258,7 +258,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const team = await storage.createTeam(teamData);
       res.status(201).json(team);
     } catch (error) {
-      res.status(400).json({ message: "Invalid team data", error });
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        console.error("Team creation error:", error);
+        res.status(500).json({ message: "Failed to create team" });
+      }
+    }
+  });
+
+  app.put("/api/teams/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = insertTeamSchema.partial().parse(req.body);
+      
+      // Check if team exists
+      const existingTeam = await storage.getTeam(id);
+      if (!existingTeam) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      const updatedTeam = await storage.updateTeam(id, updates);
+      if (updatedTeam) {
+        res.json(updatedTeam);
+      } else {
+        res.status(500).json({ message: "Failed to update team" });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: error.errors });
+      } else {
+        console.error("Team update error:", error);
+        res.status(500).json({ message: "Failed to update team" });
+      }
+    }
+  });
+
+  app.get("/api/teams/manager/:managerId", async (req, res) => {
+    try {
+      const managerId = parseInt(req.params.managerId);
+      const teams = await storage.getTeamsByManager(managerId);
+      res.json(teams);
+    } catch (error) {
+      console.error("Error fetching teams by manager:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
     }
   });
 
