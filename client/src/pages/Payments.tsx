@@ -188,7 +188,7 @@ export default function Payments() {
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Amount (₹)</FormLabel>
+                      <FormLabel>Amount (S$)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -245,7 +245,7 @@ export default function Payments() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">Total Pending</p>
-                <p className="text-2xl font-bold text-foreground">₹{totalPending.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">S${totalPending.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -273,7 +273,7 @@ export default function Payments() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">This Month</p>
-                <p className="text-2xl font-bold text-foreground">₹45,000</p>
+                <p className="text-2xl font-bold text-foreground">S$45,000</p>
               </div>
             </div>
           </CardContent>
@@ -344,7 +344,7 @@ export default function Payments() {
                     <TableCell className="font-medium">
                       {player?.name || 'Unknown Player'}
                     </TableCell>
-                    <TableCell>₹{parseFloat(payment.amount).toLocaleString()}</TableCell>
+                    <TableCell>S${parseFloat(payment.amount).toLocaleString()}</TableCell>
                     <TableCell>
                       {new Date(payment.dueDate).toLocaleDateString()}
                     </TableCell>

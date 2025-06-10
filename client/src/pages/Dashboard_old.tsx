@@ -620,14 +620,14 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Pending Payments</span>
                   <span className="text-sm font-medium text-accent">
-                    ₹{pendingPayments?.reduce((total: number, payment: any) => 
+                    S${pendingPayments?.reduce((total: number, payment: any) => 
                       total + parseFloat(payment.amount), 0
                     ).toLocaleString() || '0'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Collected This Month</span>
-                  <span className="text-sm font-medium text-secondary">₹45,000</span>
+                  <span className="text-sm font-medium text-secondary">S$45,000</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Outstanding Invoices</span>

@@ -221,7 +221,7 @@ export default function Invoices() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">Total Pending</p>
-                <p className="text-2xl font-bold text-foreground">₹{totalPending.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-foreground">S${totalPending.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
@@ -302,7 +302,7 @@ export default function Invoices() {
                         {invoice.description}
                       </div>
                     </TableCell>
-                    <TableCell>₹{parseFloat(invoice.amount).toLocaleString()}</TableCell>
+                    <TableCell>S${parseFloat(invoice.amount).toLocaleString()}</TableCell>
                     <TableCell>
                       {new Date(invoice.issueDate).toLocaleDateString()}
                     </TableCell>
