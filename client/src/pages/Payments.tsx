@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertPaymentSchema } from "@shared/schema";
 import { Plus, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
 
 const paymentFormSchema = insertPaymentSchema.extend({
   amount: z.string().min(1, "Amount is required"),
@@ -26,6 +27,10 @@ export default function Payments() {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const teamId = 1; // This would come from user context
+  const { user } = useAuth();
+  
+  // Check if user is a player (role-based access control)
+  const isPlayer = user?.role === "player";
 
   const { data: pendingPayments, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/payments/pending`],
@@ -167,14 +172,15 @@ export default function Payments() {
           <p className="text-muted-foreground">Track and manage player match fees</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Payment
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        {!isPlayer && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Payment
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Payment</DialogTitle>
             </DialogHeader>
@@ -279,7 +285,8 @@ export default function Payments() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -341,27 +348,29 @@ export default function Payments() {
         </Card>
       </div>
 
-      {/* Player Filter */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter by Player</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Select onValueChange={setSelectedPlayer}>
-            <SelectTrigger className="w-64">
-              <SelectValue placeholder="Select a player to view their payments" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Players</SelectItem>
-              {playersArray.map((player: any) => (
-                <SelectItem key={player.id} value={player.id.toString()}>
-                  {player.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </CardContent>
-      </Card>
+      {/* Player Filter - Only show for managers */}
+      {!isPlayer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Filter by Player</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select onValueChange={setSelectedPlayer}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Select a player to view their payments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Players</SelectItem>
+                {playersArray.map((player: any) => (
+                  <SelectItem key={player.id} value={player.id.toString()}>
+                    {player.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Payments Table */}
       <Card>
