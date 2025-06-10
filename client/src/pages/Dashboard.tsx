@@ -29,10 +29,15 @@ import {
   Target
 } from "lucide-react";
 
-const matchFormSchema = insertMatchSchema.extend({
+const matchFormSchema = z.object({
+  homeTeamId: z.number(),
+  date: z.string().min(1, "Date is required"),
   venue: z.string().min(1, "Venue is required"),
   opponent: z.string().min(1, "Opponent team is required"),
+  matchType: z.string(),
+  totalOvers: z.number(),
   matchFee: z.string().min(1, "Match fee is required"),
+  status: z.string().default("scheduled"),
 });
 
 export default function Dashboard() {
@@ -82,20 +87,31 @@ export default function Dashboard() {
 
   const createMatchMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/matches", data),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("Match created successfully:", result);
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
       setIsScheduleDialogOpen(false);
       matchForm.reset();
+      alert("Match scheduled successfully!");
     },
     onError: (error: any) => {
       console.error("Match creation error:", error);
-      alert(`Error scheduling match: ${error.message || 'Unknown error'}`);
+      const errorMessage = error?.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Error scheduling match: ${errorMessage}`);
     },
   });
 
   const onMatchSubmit = (data: any) => {
     console.log("Match form submission data:", data);
+    console.log("Form errors:", matchForm.formState.errors);
+    
+    // Check for form validation errors
+    if (Object.keys(matchForm.formState.errors).length > 0) {
+      console.error("Form validation errors:", matchForm.formState.errors);
+      alert("Please fix the form errors before submitting");
+      return;
+    }
     
     if (!data.opponent || data.opponent.trim() === "") {
       alert("Please enter opponent team name");
@@ -103,6 +119,14 @@ export default function Dashboard() {
     }
     if (!data.date) {
       alert("Please select a match date");
+      return;
+    }
+    if (!data.venue || data.venue.trim() === "") {
+      alert("Please enter venue");
+      return;
+    }
+    if (!data.matchFee || data.matchFee.trim() === "") {
+      alert("Please enter match fee");
       return;
     }
     
@@ -117,7 +141,7 @@ export default function Dashboard() {
     const matchData = {
       homeTeamId: teamId,
       awayTeamId: 2, // Default away team ID since we're using text input
-      date: new Date(data.date).toISOString(),
+      date: data.date, // Keep as string, schema will transform it
       venue: data.venue,
       status: "scheduled",
       matchType: data.matchType,
@@ -371,6 +395,7 @@ export default function Dashboard() {
                     <Button 
                       type="submit" 
                       disabled={createMatchMutation.isPending}
+                      className="bg-primary hover:bg-primary/90"
                     >
                       {createMatchMutation.isPending ? "Scheduling..." : "Schedule Match"}
                     </Button>
