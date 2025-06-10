@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Trophy,
   Target,
@@ -19,67 +20,81 @@ const navigation = [
     description: "Team overview & quick actions",
     href: "/", 
     icon: BarChart3, 
-    dataTour: "dashboard" 
+    dataTour: "dashboard",
+    roles: ["manager", "player"]
   },
   { 
     name: "Live Scoring", 
     description: "Track match progress in real-time",
     href: "/live-scoring", 
     icon: Target, 
-    dataTour: "live-scoring" 
+    dataTour: "live-scoring",
+    roles: ["manager"]
   },
   { 
     name: "Team Management", 
     description: "Create & manage your teams",
     href: "/team-management", 
     icon: Trophy, 
-    dataTour: "teams" 
+    dataTour: "teams",
+    roles: ["manager"]
   },
   { 
     name: "Player Management", 
     description: "Team roster & player details",
     href: "/player-management", 
     icon: Users, 
-    dataTour: "players" 
+    dataTour: "players",
+    roles: ["manager"]
   },
   { 
     name: "Availability", 
     description: "Player availability for matches",
     href: "/availability", 
     icon: CalendarCheck, 
-    dataTour: "availability" 
+    dataTour: "availability",
+    roles: ["manager", "player"]
   },
   { 
     name: "Payments", 
     description: "Match fees & player payments",
     href: "/payments", 
     icon: CreditCard, 
-    dataTour: "payments" 
+    dataTour: "payments",
+    roles: ["manager", "player"]
   },
   { 
     name: "Invoices", 
     description: "Corporate billing & invoices",
     href: "/invoices", 
     icon: FileText, 
-    dataTour: "invoices" 
+    dataTour: "invoices",
+    roles: ["manager"]
   },
   { 
     name: "Analytics", 
     description: "Performance insights & statistics",
     href: "/analytics", 
     icon: TrendingUp, 
-    dataTour: "analytics" 
+    dataTour: "analytics",
+    roles: ["manager"]
   },
 ];
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
   const teamId = 1;
 
   const { data: team } = useQuery({
     queryKey: [`/api/teams/${teamId}`],
     queryFn: () => fetch(`/api/teams/${teamId}`).then(res => res.json()),
   });
+
+  // Filter navigation items based on user role
+  const filteredNavigation = navigation.filter(item => 
+    item.roles.includes(user?.role || 'player')
+  );
 
   return (
     <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-card shadow-lg border-r border-border">
@@ -92,7 +107,7 @@ export default function Sidebar() {
         
         {/* Navigation */}
         <nav className="flex-1 px-3 py-6 space-y-2">
-          {navigation.map((item) => {
+          {filteredNavigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
             

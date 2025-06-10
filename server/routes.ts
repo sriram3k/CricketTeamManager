@@ -669,6 +669,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(payments);
   });
 
+  app.get("/api/payments", async (req: any, res) => {
+    try {
+      // Check for local user session
+      if (req.session?.localUser) {
+        const localUser = await storage.getLocalUser(req.session.localUser.id);
+        if (localUser?.role === 'player') {
+          // For players, only show their own payments
+          const player = await db.select().from(players).where(eq(players.email, localUser.email)).limit(1);
+          if (player.length > 0) {
+            const playerPayments = await storage.getPaymentsByPlayer(player[0].id);
+            return res.json(playerPayments);
+          }
+          return res.json([]);
+        }
+      }
+      
+      // For managers, show all payments for their teams
+      const allPayments = await db.select().from(payments);
+      res.json(allPayments);
+    } catch (error) {
+      console.error("Error fetching payments:", error);
+      res.status(500).json({ message: "Failed to fetch payments" });
+    }
+  });
+
   app.post("/api/payments", async (req, res) => {
     try {
       const paymentData = insertPaymentSchema.parse(req.body);
