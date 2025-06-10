@@ -41,7 +41,7 @@ export class DatabaseStorage implements IStorage {
     const [organizer] = await db.insert(localUsers).values({
       username: "organizer",
       email: "organizer@cricketteam.com", 
-      password: "password",
+      passwordHash: "$2b$10$encrypted_password_hash_here",
       firstName: "Event",
       lastName: "Organizer",
       role: "organizer"
@@ -50,7 +50,7 @@ export class DatabaseStorage implements IStorage {
     const [player] = await db.insert(localUsers).values({
       username: "player",
       email: "player@cricketteam.com",
-      password: "password",
+      passwordHash: "$2b$10$encrypted_password_hash_here",
       firstName: "Star",
       lastName: "Player",
       role: "player"
@@ -163,19 +163,24 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  // Users
-  async getUser(id: number): Promise<User | undefined> {
+  // Replit Auth Users
+  async getUser(id: string): Promise<any | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async upsertUser(userData: any): Promise<any> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
@@ -551,9 +556,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingPaymentsByTeam(teamId: number): Promise<Payment[]> {
-    // Get player IDs for the team first
-    const teamPlayers = await db.select({ id: players.id }).from(players).where(eq(players.teamId, teamId));
-    const playerIds = teamPlayers.map(p => p.id);
+    // Get player IDs for the team using the junction table
+    const teamPlayers = await db.select({ playerId: playerTeams.playerId })
+      .from(playerTeams)
+      .where(and(eq(playerTeams.teamId, teamId), eq(playerTeams.isActive, true)));
+    const playerIds = teamPlayers.map(p => p.playerId);
     
     if (playerIds.length === 0) return [];
     
