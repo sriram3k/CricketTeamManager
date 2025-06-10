@@ -19,8 +19,8 @@ import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
   constructor() {
-    // Initialize sample data on first run
-    this.initializeSampleData().catch(console.error);
+    // Sample data initialization disabled to fix authentication errors
+    // this.initializeSampleData().catch(console.error);
   }
 
   private async initializeSampleData() {
