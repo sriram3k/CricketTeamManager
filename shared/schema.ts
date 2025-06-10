@@ -42,7 +42,7 @@ export const matches = pgTable("matches", {
   totalOvers: integer("total_overs").default(20),
   result: text("result"),
   winnerTeamId: integer("winner_team_id"),
-  matchFee: decimal("match_fee", { precision: 10, scale: 2 }),
+  matchFee: text("match_fee"),
 });
 
 export const innings = pgTable("innings", {

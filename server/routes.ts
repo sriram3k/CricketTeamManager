@@ -277,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const pendingPayments = await storage.getPendingPaymentsByTeam(teamId);
     
     const pendingAmount = pendingPayments.reduce((total, payment) => 
-      total + parseFloat(payment.amount.toString()), 0
+      total + (payment.amount ? parseFloat(payment.amount.toString()) : 0), 0
     );
 
     res.json({

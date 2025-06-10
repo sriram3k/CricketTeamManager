@@ -1,0 +1,1 @@
+ALTER TABLE "matches" ALTER COLUMN "match_fee" SET DATA TYPE text;
