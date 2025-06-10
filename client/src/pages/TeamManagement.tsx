@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTeamSchema, type Team, type InsertTeam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit2, Users, MapPin, Calendar, Globe, Phone, Mail, Trophy, Palette } from "lucide-react";
+import { Plus, Edit2, Users, MapPin, Calendar, Globe, Phone, Mail, Trophy, Palette, Trash2, MoreVertical } from "lucide-react";
 import { z } from "zod";
 
 const teamFormSchema = insertTeamSchema.extend({
@@ -28,6 +30,7 @@ type TeamFormData = z.infer<typeof teamFormSchema>;
 export default function TeamManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -112,6 +115,34 @@ export default function TeamManagement() {
       toast({
         title: "Success",
         description: "Team updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const response = await fetch(`/api/teams/${teamId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete team");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/manager", (user as any)?.id] });
+      setDeletingTeam(null);
+      toast({
+        title: "Success",
+        description: "Team deleted successfully",
       });
     },
     onError: (error: Error) => {
@@ -421,14 +452,30 @@ export default function TeamManagement() {
                     />
                     <CardTitle className="text-lg">{team.name}</CardTitle>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(team)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEditDialog(team)}>
+                        <Edit2 className="mr-2 h-4 w-4" />
+                        Edit Team
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeletingTeam(team)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Team
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <CardDescription className="line-clamp-2">
                   {team.description || "No description provided"}
@@ -508,6 +555,33 @@ export default function TeamManagement() {
           />
         </DialogContent>
       </Dialog>
+
+      {/* Delete Team Confirmation Dialog */}
+      <AlertDialog open={!!deletingTeam} onOpenChange={() => setDeletingTeam(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Team</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deletingTeam?.name}"? This action cannot be undone. 
+              All team data, including players, matches, and statistics will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingTeam) {
+                  deleteTeamMutation.mutate(deletingTeam.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={deleteTeamMutation.isPending}
+            >
+              {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

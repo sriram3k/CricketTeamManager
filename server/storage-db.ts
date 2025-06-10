@@ -274,6 +274,16 @@ export class DatabaseStorage implements IStorage {
     return team || undefined;
   }
 
+  async deleteTeam(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(teams).where(eq(teams.id, id));
+      return (result.rowCount || 0) > 0;
+    } catch (error) {
+      console.error('Error deleting team:', error);
+      return false;
+    }
+  }
+
   async getAllTeams(): Promise<Team[]> {
     return await db.select().from(teams);
   }

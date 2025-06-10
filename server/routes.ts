@@ -306,6 +306,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/teams/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if team exists
+      const existingTeam = await storage.getTeam(id);
+      if (!existingTeam) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      const deleted = await storage.deleteTeam(id);
+      if (deleted) {
+        res.json({ message: "Team deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete team" });
+      }
+    } catch (error) {
+      console.error("Team deletion error:", error);
+      res.status(500).json({ message: "Failed to delete team" });
+    }
+  });
+
   // Players
   app.get("/api/teams/:teamId/players", async (req, res) => {
     const players = await storage.getPlayersByTeam(parseInt(req.params.teamId));
