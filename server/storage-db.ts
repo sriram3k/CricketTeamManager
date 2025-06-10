@@ -531,6 +531,10 @@ export class DatabaseStorage implements IStorage {
     return response || undefined;
   }
 
+  async getAllAvailabilityResponses(): Promise<AvailabilityResponse[]> {
+    return await db.select().from(availabilityResponses);
+  }
+
   // Payments
   async getPayment(id: number): Promise<Payment | undefined> {
     const [payment] = await db.select().from(payments).where(eq(payments.id, id));

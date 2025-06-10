@@ -676,6 +676,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all availability responses
+  app.get("/api/availability-responses", async (req, res) => {
+    try {
+      const responses = await storage.getAllAvailabilityResponses();
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching availability responses:", error);
+      res.status(500).json({ message: "Failed to fetch availability responses" });
+    }
+  });
+
   app.post("/api/availability-responses", async (req, res) => {
     try {
       const responseData = insertAvailabilityResponseSchema.parse(req.body);
