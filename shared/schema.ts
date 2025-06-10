@@ -147,7 +147,15 @@ export const insertBallSchema = createInsertSchema(balls).omit({ id: true });
 export const insertPlayerStatsSchema = createInsertSchema(playerStats).omit({ id: true });
 export const insertAvailabilityRequestSchema = createInsertSchema(availabilityRequests).omit({ id: true });
 export const insertAvailabilityResponseSchema = createInsertSchema(availabilityResponses).omit({ id: true, responseDate: true });
-export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true });
+export const insertPaymentSchema = z.object({
+  playerId: z.number(),
+  matchId: z.number(),
+  amount: z.string(),
+  status: z.string().default("pending"),
+  dueDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val),
+  paidDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val).optional(),
+  paymentMethod: z.string().optional(),
+});
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, issueDate: true });
 
 // Types

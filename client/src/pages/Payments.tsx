@@ -312,8 +312,8 @@ export default function Payments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(selectedPlayer ? playerPayments : pendingPayments)?.map((payment: any) => {
-                const player = players?.find((p: any) => p.id === payment.playerId);
+              {(selectedPlayer ? playerPaymentsArray : paymentsArray).map((payment: any) => {
+                const player = playersArray.find((p: any) => p.id === payment.playerId);
                 const isOverdue = new Date(payment.dueDate) < new Date() && payment.status === 'pending';
                 
                 return (
@@ -358,7 +358,7 @@ export default function Payments() {
             </TableBody>
           </Table>
           
-          {(!pendingPayments || pendingPayments.length === 0) && !selectedPlayer && (
+          {paymentsArray.length === 0 && !selectedPlayer && (
             <div className="text-center py-8">
               <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">No Pending Payments</h3>
@@ -366,7 +366,7 @@ export default function Payments() {
             </div>
           )}
           
-          {selectedPlayer && (!playerPayments || playerPayments.length === 0) && (
+          {selectedPlayer && playerPaymentsArray.length === 0 && (
             <div className="text-center py-8">
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground">No Payment History</h3>
