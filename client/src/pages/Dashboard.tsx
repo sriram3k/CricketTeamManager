@@ -26,7 +26,11 @@ import {
   Check,
   Clock,
   X,
-  Target
+  Target,
+  CreditCard,
+  BarChart3,
+  Bell,
+  CheckCircle
 } from "lucide-react";
 
 const matchFormSchema = z.object({
@@ -168,20 +172,73 @@ export default function Dashboard() {
   return (
     <div data-tour="dashboard" className="space-y-8">
       {/* Header */}
-      <div className="md:flex md:items-center md:justify-between">
+      <div className="mb-8">
         <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 text-foreground sm:text-3xl sm:truncate">
-            Team Command Centre
+          <h2 className="text-3xl font-bold leading-7 text-foreground">
+            Cricket Team Management
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Mumbai Warriors • Match Day Ready • {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
+          <p className="mt-2 text-muted-foreground">
+            Complete cricket management platform for Mumbai Warriors team
           </p>
         </div>
+        
+        {/* Quick Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <Card className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50" onClick={() => setIsScheduleDialogOpen(true)}>
+            <div className="flex items-center space-x-3">
+              <div className="p-3 bg-primary/10 rounded-xl">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">Schedule Match</h3>
+                <p className="text-xs text-muted-foreground">Plan new games</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-green-500/50">
+            <div className="flex items-center space-x-3" onClick={() => setIsQuickScoreDialogOpen(true)}>
+              <div className="p-3 bg-green-500/10 rounded-xl">
+                <Target className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm">Live Scoring</h3>
+                <p className="text-xs text-muted-foreground">Track matches</p>
+              </div>
+            </div>
+          </Card>
+          
+          <Link href="/player-management">
+            <Card className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-blue-500/50">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-blue-500/10 rounded-xl">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">Player Management</h3>
+                  <p className="text-xs text-muted-foreground">Team roster</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+          
+          <Link href="/payments">
+            <Card className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-orange-500/50">
+              <div className="flex items-center space-x-3">
+                <div className="p-3 bg-orange-500/10 rounded-xl">
+                  <DollarSign className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">Payments</h3>
+                  <p className="text-xs text-muted-foreground">Track finances</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+        </div>
+      </div>
+      
+      <div className="hidden">
         <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
           <Dialog open={isQuickScoreDialogOpen} onOpenChange={setIsQuickScoreDialogOpen}>
             <DialogTrigger asChild>
@@ -407,8 +464,52 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <StatsGrid stats={dashboardStats} />
+      {/* Team Overview Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Matches Won</p>
+              <p className="text-2xl font-bold text-green-600">{dashboardStats?.matchesWon || 0}</p>
+              <p className="text-xs text-muted-foreground mt-1">This season</p>
+            </div>
+            <Trophy className="h-8 w-8 text-green-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Active Players</p>
+              <p className="text-2xl font-bold text-blue-600">{dashboardStats?.activePlayers || 0}</p>
+              <p className="text-xs text-muted-foreground mt-1">Available for selection</p>
+            </div>
+            <Users className="h-8 w-8 text-blue-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Upcoming Matches</p>
+              <p className="text-2xl font-bold text-orange-600">{dashboardStats?.upcomingMatches || 0}</p>
+              <p className="text-xs text-muted-foreground mt-1">Scheduled games</p>
+            </div>
+            <Calendar className="h-8 w-8 text-orange-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Pending Payments</p>
+              <p className="text-2xl font-bold text-red-600">{dashboardStats?.pendingPayments || 0}</p>
+              <p className="text-xs text-muted-foreground mt-1">Require attention</p>
+            </div>
+            <DollarSign className="h-8 w-8 text-red-600" />
+          </div>
+        </Card>
+      </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
