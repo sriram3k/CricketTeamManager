@@ -7,10 +7,13 @@ const storage = new DatabaseStorage();
 import { sendPlayerInviteEmail } from "./emailService";
 import { insertPlayerInviteSchema } from "@shared/schema";
 
-const inviteFormSchema = insertPlayerInviteSchema.extend({
+const inviteFormSchema = z.object({
+  teamId: z.number(),
   email: z.string().email("Invalid email address"),
   inviterName: z.string().min(1, "Inviter name is required"),
   teamName: z.string().min(1, "Team name is required"),
+  position: z.string().optional(),
+  message: z.string().optional(),
 });
 
 export function registerInviteRoutes(app: Express) {
@@ -26,12 +29,19 @@ export function registerInviteRoutes(app: Express) {
       expiresAt.setDate(expiresAt.getDate() + 7);
 
       // Create invite in database
-      const invite = await storage.createPlayerInvite({
-        ...validatedData,
+      const inviteData = {
         teamId,
+        email: validatedData.email,
+        inviterName: validatedData.inviterName,
+        teamName: validatedData.teamName,
+        position: validatedData.position || null,
+        message: validatedData.message || null,
+        status: 'pending',
         token,
         expiresAt,
-      });
+      };
+      
+      const invite = await storage.createPlayerInvite(inviteData);
 
       // Generate invite URL
       const baseUrl = process.env.NODE_ENV === 'production' 

@@ -216,7 +216,8 @@ export const insertPlayerInviteSchema = createInsertSchema(playerInvites).omit({
   id: true, 
   createdAt: true, 
   acceptedAt: true,
-  token: true
+  token: true,
+  expiresAt: true
 });
 
 // Types for main entities
