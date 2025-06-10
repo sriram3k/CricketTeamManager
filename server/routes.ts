@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { registerInviteRoutes } from "./inviteRoutes";
 import {
   insertUserSchema, insertTeamSchema, insertPlayerSchema, insertMatchSchema,
   insertInningsSchema, insertBallSchema, insertPlayerStatsSchema,

@@ -1,14 +1,16 @@
 import {
   users, teams, players, matches, 
   innings as inningsTable, balls, playerStats,
-  availabilityRequests, availabilityResponses, payments, invoices,
+  availabilityRequests, availabilityResponses, payments, invoices, playerInvites,
   type User, type InsertUser, type Team, type InsertTeam,
   type Player, type InsertPlayer, type Match, type InsertMatch,
   type Innings, type InsertInnings, type Ball, type InsertBall,
   type PlayerStats, type InsertPlayerStats,
   type AvailabilityRequest, type InsertAvailabilityRequest,
   type AvailabilityResponse, type InsertAvailabilityResponse,
-  type Payment, type InsertPayment, type Invoice, type InsertInvoice
+  type Payment, type InsertPayment, type Invoice, type InsertInvoice,
+  type PlayerInvite, type InsertPlayerInvite,
+  localUsers
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
@@ -425,5 +427,40 @@ export class DatabaseStorage implements IStorage {
   async getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]> {
     return await db.select().from(invoices)
       .where(and(eq(invoices.teamId, teamId), eq(invoices.status, "sent")));
+  }
+
+  // Player Invites
+  async getPlayerInvite(id: number): Promise<PlayerInvite | undefined> {
+    const [invite] = await db.select().from(playerInvites).where(eq(playerInvites.id, id));
+    return invite || undefined;
+  }
+
+  async getPlayerInviteByToken(token: string): Promise<PlayerInvite | undefined> {
+    const [invite] = await db.select().from(playerInvites).where(eq(playerInvites.token, token));
+    return invite || undefined;
+  }
+
+  async getPlayerInvitesByTeam(teamId: number): Promise<PlayerInvite[]> {
+    return await db.select().from(playerInvites)
+      .where(eq(playerInvites.teamId, teamId))
+      .orderBy(desc(playerInvites.createdAt));
+  }
+
+  async createPlayerInvite(invite: InsertPlayerInvite & { token: string; expiresAt: Date }): Promise<PlayerInvite> {
+    const [playerInvite] = await db.insert(playerInvites).values(invite).returning();
+    return playerInvite;
+  }
+
+  async updatePlayerInviteStatus(id: number, status: string, acceptedAt?: Date): Promise<PlayerInvite | undefined> {
+    const updates: Partial<PlayerInvite> = { status };
+    if (acceptedAt) {
+      updates.acceptedAt = acceptedAt;
+    }
+    const [invite] = await db.update(playerInvites).set(updates).where(eq(playerInvites.id, id)).returning();
+    return invite || undefined;
+  }
+
+  async deleteExpiredInvites(): Promise<void> {
+    await db.delete(playerInvites).where(sql`${playerInvites.expiresAt} < NOW()`);
   }
 }

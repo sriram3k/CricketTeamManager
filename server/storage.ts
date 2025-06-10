@@ -89,6 +89,14 @@ export interface IStorage {
   createInvoice(invoice: InsertInvoice): Promise<Invoice>;
   updateInvoice(id: number, updates: Partial<Invoice>): Promise<Invoice | undefined>;
   getPendingInvoicesByTeam(teamId: number): Promise<Invoice[]>;
+
+  // Player Invites
+  getPlayerInvite(id: number): Promise<PlayerInvite | undefined>;
+  getPlayerInviteByToken(token: string): Promise<PlayerInvite | undefined>;
+  getPlayerInvitesByTeam(teamId: number): Promise<PlayerInvite[]>;
+  createPlayerInvite(invite: InsertPlayerInvite & { token: string; expiresAt: Date }): Promise<PlayerInvite>;
+  updatePlayerInviteStatus(id: number, status: string, acceptedAt?: Date): Promise<PlayerInvite | undefined>;
+  deleteExpiredInvites(): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
