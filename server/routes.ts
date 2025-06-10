@@ -609,6 +609,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Availability Requests
+  app.get("/api/availability", async (req: any, res) => {
+    try {
+      // For role-based filtering, get all availability requests for the user's team
+      const requests = await storage.getAvailabilityRequestsByTeam(1); // Using team ID 1 for now
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching availability requests:", error);
+      res.status(500).json({ message: "Failed to fetch availability requests" });
+    }
+  });
+
   app.get("/api/teams/:teamId/availability-requests", async (req, res) => {
     const requests = await storage.getAvailabilityRequestsByTeam(parseInt(req.params.teamId));
     res.json(requests);
