@@ -58,6 +58,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(player);
   });
 
+  app.delete("/api/players/:id", async (req, res) => {
+    const deleted = await storage.deletePlayer(parseInt(req.params.id));
+    if (!deleted) return res.status(404).json({ message: "Player not found" });
+    res.json({ message: "Player deleted successfully" });
+  });
+
   // Matches
   app.get("/api/teams/:teamId/matches", async (req, res) => {
     const matches = await storage.getMatchesByTeam(parseInt(req.params.teamId));

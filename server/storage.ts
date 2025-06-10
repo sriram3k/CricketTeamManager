@@ -29,6 +29,7 @@ export interface IStorage {
   getPlayersByTeam(teamId: number): Promise<Player[]>;
   createPlayer(player: InsertPlayer): Promise<Player>;
   updatePlayer(id: number, updates: Partial<Player>): Promise<Player | undefined>;
+  deletePlayer(id: number): Promise<boolean>;
   getActivePlayersByTeam(teamId: number): Promise<Player[]>;
 
   // Matches
@@ -290,6 +291,10 @@ export class MemStorage implements IStorage {
     const updatedPlayer = { ...player, ...updates };
     this.players.set(id, updatedPlayer);
     return updatedPlayer;
+  }
+
+  async deletePlayer(id: number): Promise<boolean> {
+    return this.players.delete(id);
   }
 
   async getActivePlayersByTeam(teamId: number): Promise<Player[]> {

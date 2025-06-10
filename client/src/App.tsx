@@ -33,7 +33,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/live-scoring" component={LiveScoring} />
-        <Route path="/players" component={PlayerManagement} />
+        <Route path="/player-management" component={PlayerManagement} />
         <Route path="/availability" component={Availability} />
         <Route path="/payments" component={Payments} />
         <Route path="/invoices" component={Invoices} />
