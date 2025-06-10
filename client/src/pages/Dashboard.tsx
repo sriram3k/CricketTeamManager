@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,7 +55,6 @@ export default function Dashboard() {
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
       homeTeamId: teamId,
-      awayTeamId: 0,
       date: "",
       venue: "",
       status: "scheduled",
@@ -65,6 +64,19 @@ export default function Dashboard() {
       opponent: "",
     },
   });
+
+  // Watch for match type changes and auto-update total overs
+  const watchedMatchType = matchForm.watch("matchType");
+  useEffect(() => {
+    let overs = 20;
+    if (watchedMatchType === "T20") overs = 20;
+    else if (watchedMatchType === "T25") overs = 25;
+    else if (watchedMatchType === "T30") overs = 30;
+    else if (watchedMatchType === "ODI") overs = 50;
+    else if (watchedMatchType === "Test") overs = 90;
+    
+    matchForm.setValue("totalOvers", overs);
+  }, [watchedMatchType, matchForm]);
 
   const createMatchMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/matches", data),
@@ -83,8 +95,8 @@ export default function Dashboard() {
   const onMatchSubmit = (data: any) => {
     console.log("Match form submission data:", data);
     
-    if (!data.awayTeamId || data.awayTeamId === 0) {
-      alert("Please select an opponent team");
+    if (!data.opponent || data.opponent.trim() === "") {
+      alert("Please enter opponent team name");
       return;
     }
     if (!data.date) {
@@ -92,14 +104,22 @@ export default function Dashboard() {
       return;
     }
     
+    // Auto-set totalOvers based on match type
+    let overs = data.totalOvers;
+    if (data.matchType === "T20") overs = 20;
+    else if (data.matchType === "T25") overs = 25;
+    else if (data.matchType === "T30") overs = 30;
+    else if (data.matchType === "ODI") overs = 50;
+    else if (data.matchType === "Test") overs = 90;
+    
     const matchData = {
       homeTeamId: teamId,
-      awayTeamId: parseInt(data.awayTeamId),
+      awayTeamId: 2, // Default away team ID since we're using text input
       date: new Date(data.date).toISOString(),
       venue: data.venue,
       status: "scheduled",
       matchType: data.matchType,
-      totalOvers: parseInt(data.totalOvers),
+      totalOvers: overs,
       matchFee: data.matchFee,
       tossWinner: null,
       tossDecision: null,
@@ -156,24 +176,13 @@ export default function Dashboard() {
                 <form onSubmit={matchForm.handleSubmit(onMatchSubmit)} className="space-y-4">
                   <FormField
                     control={matchForm.control}
-                    name="awayTeamId"
+                    name="opponent"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Opponent Team</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select opponent team" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {allTeams?.filter((team: any) => team.id !== teamId).map((team: any) => (
-                              <SelectItem key={team.id} value={team.id.toString()}>
-                                {team.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input placeholder="Enter opponent team name" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -221,6 +230,8 @@ export default function Dashboard() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="T20">T20</SelectItem>
+                            <SelectItem value="T25">T25</SelectItem>
+                            <SelectItem value="T30">T30</SelectItem>
                             <SelectItem value="ODI">ODI</SelectItem>
                             <SelectItem value="Test">Test</SelectItem>
                           </SelectContent>
