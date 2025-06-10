@@ -1,9 +1,10 @@
 import {
-  users, teams, players, matches, 
+  users, teams, players, playerTeams, matches, 
   innings as inningsTable, balls, playerStats,
   availabilityRequests, availabilityResponses, payments, invoices, playerInvites,
-  type User, type InsertUser, type Team, type InsertTeam,
-  type Player, type InsertPlayer, type Match, type InsertMatch,
+  type User, type UpsertUser, type Team, type InsertTeam,
+  type Player, type InsertPlayer, type PlayerTeam, type InsertPlayerTeam,
+  type Match, type InsertMatch,
   type Innings, type InsertInnings, type Ball, type InsertBall,
   type PlayerStats, type InsertPlayerStats,
   type AvailabilityRequest, type InsertAvailabilityRequest,
@@ -294,8 +295,44 @@ export class DatabaseStorage implements IStorage {
     return player || undefined;
   }
 
-  async getPlayersByTeam(teamId: number): Promise<Player[]> {
-    return await db.select().from(players).where(eq(players.teamId, teamId));
+  async getPlayersByTeam(teamId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        id: players.id,
+        name: players.name,
+        email: players.email,
+        phone: players.phone,
+        preferredPosition: players.preferredPosition,
+        battingStyle: players.battingStyle,
+        bowlingStyle: players.bowlingStyle,
+        isActive: players.isActive,
+        jerseyNumber: playerTeams.jerseyNumber,
+        position: playerTeams.position,
+        joinedAt: playerTeams.joinedAt,
+        teamIsActive: playerTeams.isActive,
+      })
+      .from(players)
+      .innerJoin(playerTeams, eq(players.id, playerTeams.playerId))
+      .where(and(eq(playerTeams.teamId, teamId), eq(playerTeams.isActive, true)));
+    
+    return result;
+  }
+
+  async getPlayerTeams(playerId: number): Promise<any[]> {
+    const result = await db
+      .select({
+        teamId: teams.id,
+        teamName: teams.name,
+        jerseyNumber: playerTeams.jerseyNumber,
+        position: playerTeams.position,
+        isActive: playerTeams.isActive,
+        joinedAt: playerTeams.joinedAt,
+      })
+      .from(playerTeams)
+      .innerJoin(teams, eq(playerTeams.teamId, teams.id))
+      .where(eq(playerTeams.playerId, playerId));
+    
+    return result;
   }
 
   async createPlayer(insertPlayer: InsertPlayer): Promise<Player> {
@@ -303,18 +340,51 @@ export class DatabaseStorage implements IStorage {
     return player;
   }
 
+  async addPlayerToTeam(playerId: number, teamId: number, playerTeamData: Partial<InsertPlayerTeam>): Promise<any> {
+    const [playerTeam] = await db.insert(playerTeams).values({
+      playerId,
+      teamId,
+      ...playerTeamData
+    }).returning();
+    return playerTeam;
+  }
+
+  async removePlayerFromTeam(playerId: number, teamId: number): Promise<boolean> {
+    const result = await db
+      .update(playerTeams)
+      .set({ isActive: false, leftAt: new Date() })
+      .where(and(eq(playerTeams.playerId, playerId), eq(playerTeams.teamId, teamId)));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async updatePlayerTeam(playerId: number, teamId: number, updates: Partial<PlayerTeam>): Promise<any> {
+    const [playerTeam] = await db
+      .update(playerTeams)
+      .set(updates)
+      .where(and(eq(playerTeams.playerId, playerId), eq(playerTeams.teamId, teamId)))
+      .returning();
+    return playerTeam;
+  }
+
   async updatePlayer(id: number, updates: Partial<Player>): Promise<Player | undefined> {
-    const [player] = await db.update(players).set(updates).where(eq(players.id, id)).returning();
+    const updateData = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    const [player] = await db.update(players).set(updateData).where(eq(players.id, id)).returning();
     return player || undefined;
   }
 
   async deletePlayer(id: number): Promise<boolean> {
-    const result = await db.delete(players).where(eq(players.id, id)).returning();
-    return result.length > 0;
+    // First deactivate all team relationships
+    await db.update(playerTeams).set({ isActive: false, leftAt: new Date() }).where(eq(playerTeams.playerId, id));
+    // Then soft delete the player
+    const result = await db.update(players).set({ isActive: false }).where(eq(players.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
-  async getActivePlayersByTeam(teamId: number): Promise<Player[]> {
-    return await db.select().from(players).where(and(eq(players.teamId, teamId), eq(players.isActive, true)));
+  async getActivePlayersByTeam(teamId: number): Promise<any[]> {
+    return this.getPlayersByTeam(teamId);
   }
 
   // Matches
