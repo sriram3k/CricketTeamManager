@@ -15,11 +15,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      // Check for local user session first
+      if (req.session?.localUser) {
+        const localUser = req.session.localUser;
+        return res.json({
+          id: localUser.id,
+          email: localUser.email,
+          username: localUser.username,
+          firstName: localUser.firstName,
+          lastName: localUser.lastName
+        });
+      }
+
+      // Then check for Replit Auth
+      if (req.isAuthenticated() && req.user?.claims?.sub) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        return res.json(user);
+      }
+
+      // No valid session found
+      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -36,7 +54,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Create session (simplified - in production use proper session management)
+      // Create a simple session for local users
+      (req as any).session.localUser = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName
+      };
+
       res.json({ user: { id: user.id, email: user.email, username: user.username } });
     } catch (error) {
       res.status(400).json({ message: "Invalid login data" });
@@ -60,6 +86,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...userData,
         passwordHash,
       });
+
+      // Create session for the new user
+      (req as any).session.localUser = {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName
+      };
 
       res.status(201).json({ user: { id: user.id, email: user.email, username: user.username } });
     } catch (error) {
