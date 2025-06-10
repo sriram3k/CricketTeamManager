@@ -62,13 +62,13 @@ export default function LiveScoring() {
         
         <div className="flex items-center space-x-4">
           <Select onValueChange={(value) => setSelectedMatch(parseInt(value))}>
-            <SelectTrigger className="w-64">
+            <SelectTrigger className="w-80">
               <SelectValue placeholder="Select a match" />
             </SelectTrigger>
             <SelectContent>
               {liveMatches?.map((match: any) => (
                 <SelectItem key={match.id} value={match.id.toString()}>
-                  Match {match.id} - {match.venue}
+                  {match.matchType || 'T20'} - {match.venue} ({match.totalOvers || 20} overs)
                 </SelectItem>
               ))}
             </SelectContent>

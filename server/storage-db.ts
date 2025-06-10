@@ -25,11 +25,25 @@ export class DatabaseStorage implements IStorage {
     const existingUsers = await db.select().from(users).limit(1);
     if (existingUsers.length > 0) return;
 
-    // Create sample users
+    // Create sample users with different roles
     const [manager] = await db.insert(users).values({
       username: "manager",
       password: "password",
-      role: "manager",
+      role: "admin",
+      teamId: null
+    }).returning();
+
+    const [organizer] = await db.insert(users).values({
+      username: "organizer",
+      password: "password",
+      role: "organizer",
+      teamId: null
+    }).returning();
+
+    const [player] = await db.insert(users).values({
+      username: "player",
+      password: "password",
+      role: "player",
       teamId: null
     }).returning();
 
