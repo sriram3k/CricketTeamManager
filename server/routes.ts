@@ -96,10 +96,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const passwordHash = await bcrypt.hash(userData.password, 10);
       
+      // Check if user is signing up via invitation
+      const inviteToken = req.query.invite as string;
+      let userRole = 'manager'; // Default role for direct signups
+      
+      if (inviteToken) {
+        // If signing up via invite, always assign 'player' role
+        const invite = await storage.getPlayerInviteByToken(inviteToken);
+        if (invite && invite.email === userData.email && invite.status === 'pending') {
+          userRole = 'player'; // Force player role for invited users
+        }
+      }
+      
       const user = await storage.createLocalUser({
-        ...userData,
+        email: userData.email,
+        username: userData.username,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         passwordHash,
+        role: userRole, // Explicitly set the role
       });
+
+      // If user signed up via invitation, complete the invitation process
+      if (inviteToken) {
+        const invite = await storage.getPlayerInviteByToken(inviteToken);
+        if (invite && invite.email === userData.email && invite.status === 'pending') {
+          // Create player record
+          const player = await storage.createPlayer({
+            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username,
+            email: userData.email,
+            preferredPosition: invite.position || null,
+            isActive: true
+          });
+
+          // Add player to team
+          await storage.addPlayerToTeam(player.id, invite.teamId, {
+            position: invite.position || null,
+            isActive: true
+          });
+
+          // Mark invitation as accepted
+          await storage.updatePlayerInviteStatus(invite.id, 'accepted', new Date());
+        }
+      }
 
       // Create session for the new user
       (req as any).session.localUser = {
