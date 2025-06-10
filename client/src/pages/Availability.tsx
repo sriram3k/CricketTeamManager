@@ -22,6 +22,8 @@ const availabilityFormSchema = insertAvailabilityRequestSchema.extend({
 
 export default function Availability() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const teamId = 1; // This would come from user context
   const { user } = useAuth();
   
@@ -34,6 +36,10 @@ export default function Availability() {
 
   const { data: players } = useQuery({
     queryKey: [`/api/teams/${teamId}/players/active`],
+  });
+
+  const { data: availabilityResponses } = useQuery({
+    queryKey: [`/api/availability-responses`],
   });
 
   const form = useForm({
@@ -58,6 +64,28 @@ export default function Availability() {
       form.reset();
     },
   });
+
+  const handleViewDetails = (request: any) => {
+    setSelectedRequest(request);
+    setIsDetailsDialogOpen(true);
+  };
+
+  // Get responses for a specific request
+  const getRequestResponses = (requestId: number) => {
+    if (!availabilityResponses) return [];
+    return availabilityResponses.filter((response: any) => response.requestId === requestId);
+  };
+
+  // Get response counts for a request
+  const getResponseCounts = (requestId: number) => {
+    const responses = getRequestResponses(requestId);
+    return {
+      available: responses.filter((r: any) => r.status === 'available').length,
+      unavailable: responses.filter((r: any) => r.status === 'unavailable').length,
+      maybe: responses.filter((r: any) => r.status === 'maybe').length,
+      pending: (players?.length || 0) - responses.length
+    };
+  };
 
   const onSubmit = (data: any) => {
     createRequestMutation.mutate({
@@ -265,6 +293,7 @@ export default function Availability() {
           <div className="space-y-4">
             {availabilityRequests?.map((request: any) => {
               const isExpired = new Date(request.deadline) < new Date();
+              const counts = getResponseCounts(request.id);
               
               return (
                 <div key={request.id} className="border border-border rounded-lg p-4">
@@ -280,27 +309,34 @@ export default function Availability() {
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-4 mb-3">
+                  <div className="grid grid-cols-4 gap-4 mb-3">
                     <div className="text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <CheckCircle className="h-4 w-4 text-secondary" />
+                        <CheckCircle className="h-4 w-4 text-green-600" />
                         <span className="text-sm font-medium">Available</span>
                       </div>
-                      <p className="text-lg font-bold text-secondary">0</p>
+                      <p className="text-lg font-bold text-green-600">{counts.available}</p>
                     </div>
                     <div className="text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <XCircle className="h-4 w-4 text-destructive" />
+                        <XCircle className="h-4 w-4 text-red-600" />
                         <span className="text-sm font-medium">Unavailable</span>
                       </div>
-                      <p className="text-lg font-bold text-destructive">0</p>
+                      <p className="text-lg font-bold text-red-600">{counts.unavailable}</p>
                     </div>
                     <div className="text-center">
                       <div className="flex items-center justify-center space-x-1">
-                        <Clock className="h-4 w-4 text-accent" />
+                        <Clock className="h-4 w-4 text-yellow-600" />
+                        <span className="text-sm font-medium">Maybe</span>
+                      </div>
+                      <p className="text-lg font-bold text-yellow-600">{counts.maybe}</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center space-x-1">
+                        <Clock className="h-4 w-4 text-gray-600" />
                         <span className="text-sm font-medium">Pending</span>
                       </div>
-                      <p className="text-lg font-bold text-accent">{players?.length || 0}</p>
+                      <p className="text-lg font-bold text-gray-600">{counts.pending}</p>
                     </div>
                   </div>
                   
@@ -309,7 +345,7 @@ export default function Availability() {
                       Deadline: {new Date(request.deadline).toLocaleDateString()} at{" "}
                       {new Date(request.deadline).toLocaleTimeString()}
                     </p>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
                       View Details
                     </Button>
                   </div>
@@ -327,6 +363,85 @@ export default function Availability() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Availability Details</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Match</p>
+                  <p className="font-medium">{selectedRequest.opponent}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Date & Venue</p>
+                  <p className="font-medium">
+                    {new Date(selectedRequest.matchDate).toLocaleDateString()} at {selectedRequest.venue}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Deadline</p>
+                  <p className="font-medium">
+                    {new Date(selectedRequest.deadline).toLocaleDateString()} at{" "}
+                    {new Date(selectedRequest.deadline).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <Badge variant={new Date(selectedRequest.deadline) < new Date() ? "secondary" : "default"}>
+                    {new Date(selectedRequest.deadline) < new Date() ? "Expired" : "Active"}
+                  </Badge>
+                </div>
+              </div>
+
+              {selectedRequest.message && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Message</p>
+                  <p className="text-sm bg-muted p-3 rounded-md">{selectedRequest.message}</p>
+                </div>
+              )}
+
+              <div>
+                <h3 className="font-medium mb-3">Player Responses</h3>
+                <div className="space-y-2">
+                  {getRequestResponses(selectedRequest.id).map((response: any) => {
+                    const player = players?.find((p: any) => p.id === response.playerId);
+                    return (
+                      <div key={response.id} className="flex items-center justify-between p-3 border rounded-md">
+                        <div>
+                          <p className="font-medium">{player?.name || `Player ${response.playerId}`}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Responded on {new Date(response.responseDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge 
+                          variant={
+                            response.status === 'available' ? 'default' : 
+                            response.status === 'unavailable' ? 'destructive' : 
+                            'secondary'
+                          }
+                        >
+                          {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                  
+                  {getRequestResponses(selectedRequest.id).length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No responses yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
