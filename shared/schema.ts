@@ -92,8 +92,8 @@ export const playerTeams = pgTable("player_teams", {
 export const matches = pgTable("matches", {
   id: serial("id").primaryKey(),
   homeTeamId: integer("home_team_id").notNull(),
-  awayTeamId: integer("away_team_id"),
-  opponentName: text("opponent_name"), // For external teams not in our system
+  awayTeamId: integer("away_team_id"), // Optional - only used for internal team vs team matches
+  opponentName: text("opponent_name"), // Free text opponent name - no database lookups
   date: timestamp("date").notNull(),
   venue: text("venue").notNull(),
   status: text("status").notNull().default("scheduled"), // scheduled, live, completed, cancelled
