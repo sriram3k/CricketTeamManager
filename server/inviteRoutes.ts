@@ -18,6 +18,78 @@ const inviteFormSchema = z.object({
 
 export function registerInviteRoutes(app: Express) {
   // Send player invitation
+  app.post("/api/invites/send", async (req, res) => {
+    try {
+      const validatedData = inviteFormSchema.parse(req.body);
+      const teamId = validatedData.teamId;
+
+      // Generate unique token and expiration (7 days from now)
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      // Create invite in database
+      const inviteData = {
+        teamId,
+        email: validatedData.email,
+        inviterName: validatedData.inviterName,
+        teamName: validatedData.teamName,
+        position: validatedData.position || null,
+        message: validatedData.message || null,
+        status: 'pending',
+        token,
+        expiresAt,
+      };
+      
+      const invite = await storage.createPlayerInvite(inviteData);
+
+      // Generate invite URL
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? `https://${req.hostname}` 
+        : `${req.protocol}://${req.hostname}:${process.env.PORT || 5000}`;
+      const inviteUrl = `${baseUrl}/invite/${token}`;
+
+      // Send email invitation
+      const emailSent = await sendPlayerInviteEmail({
+        to: validatedData.email,
+        inviterName: validatedData.inviterName,
+        teamName: validatedData.teamName,
+        position: validatedData.position,
+        message: validatedData.message,
+        inviteUrl,
+      });
+
+      if (emailSent) {
+        res.status(201).json({
+          message: "Invitation sent successfully",
+          invite: {
+            id: invite.id,
+            email: invite.email,
+            teamName: invite.teamName,
+            status: invite.status,
+          }
+        });
+      } else {
+        res.status(500).json({ 
+          message: "Failed to send invitation email" 
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      } else {
+        console.error("Invite error:", error);
+        res.status(500).json({ 
+          message: "Failed to send invitation" 
+        });
+      }
+    }
+  });
+
+  // Send player invitation (original route)
   app.post("/api/teams/:teamId/invite", async (req, res) => {
     try {
       const teamId = parseInt(req.params.teamId);
