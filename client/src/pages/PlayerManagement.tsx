@@ -25,6 +25,7 @@ export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const teamId = 1; // This would come from user context
+  const { toast } = useToast();
 
   const { data: players, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/players`],
@@ -58,6 +59,24 @@ export default function PlayerManagement() {
       setIsDialogOpen(false);
       setEditingPlayer(null);
       form.reset();
+    },
+  });
+
+  const deletePlayerMutation = useMutation({
+    mutationFn: (playerId: number) => apiRequest("DELETE", `/api/players/${playerId}`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/players`] });
+      toast({
+        title: "Player deleted",
+        description: "The player has been successfully removed from the team.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete player. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -293,6 +312,34 @@ export default function PlayerManagement() {
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete {player.name} from the team? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deletePlayerMutation.mutate(player.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Player
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}
