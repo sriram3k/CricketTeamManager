@@ -1,0 +1,92 @@
+1. Executive Summary
+
+This document outlines the business requirements for a mobile and web-based cricket management application. The app will streamline team management, match scoring, player participation tracking, payments, invoicing, and data-driven performance analysis. The aim is to simplify cricket operations for amateur and corporate teams, enhance team coordination, ensure financial transparency, and offer strategic insights to improve gameplay.
+
+⸻
+
+2. Business Objectives
+	•	Provide an all-in-one platform for managing cricket teams and matches.
+	•	Automate and digitize the scoring process.
+	•	Collect and store data for individual and team performance tracking.
+	•	Enable seamless communication of player availability to team managers.
+	•	Ensure easy and transparent financial transactions for players and teams.
+	•	Provide match insights and analytics to improve team strategies and outcomes.
+
+⸻
+
+3. Scope
+
+In Scope
+	•	Match scoring with real-time and post-match data collection.
+	•	Player availability tracking by team managers/admins.
+	•	Payment tracking for players based on match participation.
+	•	Invoice generation and tracking by corporate organizers.
+	•	In-app payment functionality.
+	•	Analytics and recommendations based on performance data.
+
+Out of Scope
+	•	International or professional league integration.
+	•	Video streaming or broadcasting of matches.
+
+⸻
+
+4. Functional Requirements
+
+4.1 Match Scoring Module
+	•	Support for all cricket formats (T20, ODI, Test).
+	•	Real-time score updating and display.
+	•	Track player stats: runs, wickets, strike rate, economy, etc.
+	•	Store match data for historical analysis.
+	•	Exportable match summaries and statistics.
+
+4.2 Player Availability Module
+	•	Players update their availability per match.
+	•	Admins/managers view availability status in dashboard.
+	•	Notifications/reminders for players to update availability.
+	•	Lock roster for upcoming matches by manager.
+
+4.3 Payment Module for Players
+	•	Track player participation per match.
+	•	Generate individual payment requests post-match.
+	•	Support in-app payment (UPI/Credit/Debit/Net Banking).
+	•	Payment history and pending dues section for players.
+
+4.4 Invoice Management by Organizers
+	•	Corporates create and send invoices for matches conducted.
+	•	Managers receive and review invoices in-app.
+	•	Managers make payments on behalf of the team via app.
+	•	Invoice history and receipts available in dashboard.
+
+4.5 Performance Analytics Module
+	•	Generate insights like:
+	•	Win/loss trends based on player performance.
+	•	Key players and match-winners.
+	•	Areas of weakness (e.g., middle-over collapses).
+	•	Suggest strategy improvements.
+	•	Personalized player performance dashboards.
+
+⸻
+
+5. Non-Functional Requirements
+	•	Mobile and web compatibility.
+	•	Secure login and role-based access (Admin, Player, Organizer).
+	•	Data encryption and secure payment gateway integration.
+	•	Responsive and intuitive user interface.
+	•	Scalable architecture to support multiple teams and tournaments.
+
+⸻
+
+6. User Roles and Permissions
+
+Role	Permissions
+Player	View schedule, update availability, view/pay match fees, view personal stats
+Admin/Manager	Manage team, view player availability, manage roster, view/pay invoices, access team analytics
+Organizer	Schedule matches, send invoices, view team rosters, track payments
+
+
+
+⸻
+
+7. Assumptions and Constraints
+	•	Users have access to smartphones or computers.
+	•	Internet connection is required for real-time updates.

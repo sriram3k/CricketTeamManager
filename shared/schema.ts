@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("player"), // player, manager, admin, corporate
+  role: text("role").notNull().default("player"), // player, admin, organizer
   teamId: integer("team_id"),
 });
 
@@ -120,7 +120,7 @@ export const payments = pgTable("payments", {
   status: text("status").notNull().default("pending"), // pending, paid, overdue
   dueDate: timestamp("due_date").notNull(),
   paidDate: timestamp("paid_date"),
-  paymentMethod: text("payment_method"),
+  paymentMethod: text("payment_method"), // UPI, Credit Card, Debit Card, Net Banking, Cash
 });
 
 export const invoices = pgTable("invoices", {

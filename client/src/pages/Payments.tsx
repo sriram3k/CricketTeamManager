@@ -17,10 +17,13 @@ import { z } from "zod";
 
 const paymentFormSchema = insertPaymentSchema.extend({
   amount: z.string().min(1, "Amount is required"),
+  paymentMethod: z.string().optional(),
 });
 
 export default function Payments() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
   const teamId = 1; // This would come from user context
 
@@ -45,6 +48,7 @@ export default function Payments() {
       amount: "",
       status: "pending",
       dueDate: new Date().toISOString().split('T')[0], // Format for date input
+      paymentMethod: "",
     },
   });
 
@@ -200,6 +204,31 @@ export default function Payments() {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Method</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment method" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="UPI">UPI</SelectItem>
+                          <SelectItem value="Credit Card">Credit Card</SelectItem>
+                          <SelectItem value="Debit Card">Debit Card</SelectItem>
+                          <SelectItem value="Net Banking">Net Banking</SelectItem>
+                          <SelectItem value="Cash">Cash</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
