@@ -154,6 +154,10 @@ export default function PlayerManagement() {
     }
   };
 
+  const onInviteSubmit = (data: any) => {
+    sendInviteMutation.mutate(data);
+  };
+
   const openEditDialog = (player: any) => {
     setEditingPlayer(player);
     form.reset(player);
@@ -193,13 +197,27 @@ export default function PlayerManagement() {
           <p className="text-muted-foreground">Manage your team roster and player information</p>
         </div>
         
+        <div className="flex gap-2">
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Player
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Mail className="h-4 w-4 mr-2" />
+                Invite Player
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Player
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -271,6 +289,112 @@ export default function PlayerManagement() {
                   </Button>
                   <Button type="submit" disabled={createPlayerMutation.isPending || updatePlayerMutation.isPending}>
                     {editingPlayer ? "Update Player" : "Add Player"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Invite Player Dialog */}
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite Player to Team</DialogTitle>
+            </DialogHeader>
+            <Form {...inviteForm}>
+              <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                <FormField
+                  control={inviteForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter email address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={inviteForm.control}
+                  name="inviterName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={inviteForm.control}
+                  name="teamName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Team Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter team name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={inviteForm.control}
+                  name="position"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Position (Optional)</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select position" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="">Any Position</SelectItem>
+                          <SelectItem value="batsman">Batsman</SelectItem>
+                          <SelectItem value="bowler">Bowler</SelectItem>
+                          <SelectItem value="all-rounder">All-rounder</SelectItem>
+                          <SelectItem value="wicket-keeper">Wicket-keeper</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={inviteForm.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Personal Message (Optional)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Add a personal message to the invitation..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={sendInviteMutation.isPending}>
+                    <Send className="h-4 w-4 mr-2" />
+                    {sendInviteMutation.isPending ? "Sending..." : "Send Invitation"}
                   </Button>
                 </div>
               </form>
