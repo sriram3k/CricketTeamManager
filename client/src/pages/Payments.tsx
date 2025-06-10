@@ -44,9 +44,7 @@ export default function Payments() {
       matchId: 1,
       amount: "",
       status: "pending",
-      dueDate: new Date(),
-      paidDate: null,
-      paymentMethod: null,
+      dueDate: new Date().toISOString().split('T')[0], // Format for date input
     },
   });
 
@@ -71,11 +69,17 @@ export default function Payments() {
   });
 
   const onSubmit = (data: any) => {
-    createPaymentMutation.mutate({
-      ...data,
-      amount: parseFloat(data.amount),
+    const paymentData = {
+      playerId: data.playerId,
+      matchId: data.matchId,
+      amount: data.amount, // Keep as string for decimal field
+      status: data.status,
       dueDate: new Date(data.dueDate).toISOString(),
-    });
+      // Don't include optional fields if they're null/empty
+      ...(data.paidDate && { paidDate: new Date(data.paidDate).toISOString() }),
+      ...(data.paymentMethod && data.paymentMethod !== "null" && { paymentMethod: data.paymentMethod }),
+    };
+    createPaymentMutation.mutate(paymentData);
   };
 
   const markAsPaid = (paymentId: number) => {
@@ -97,13 +101,17 @@ export default function Payments() {
     );
   }
 
-  const totalPending = pendingPayments?.reduce((total: number, payment: any) => 
-    total + parseFloat(payment.amount), 0
-  ) || 0;
+  const paymentsArray = Array.isArray(pendingPayments) ? pendingPayments : [];
+  const playersArray = Array.isArray(players) ? players : [];
+  const playerPaymentsArray = Array.isArray(playerPayments) ? playerPayments : [];
 
-  const overduePayments = pendingPayments?.filter((payment: any) => 
+  const totalPending = paymentsArray.reduce((total: number, payment: any) => 
+    total + parseFloat(payment.amount), 0
+  );
+
+  const overduePayments = paymentsArray.filter((payment: any) => 
     new Date(payment.dueDate) < new Date()
-  ) || [];
+  );
 
   return (
     <div className="space-y-6">
@@ -140,7 +148,7 @@ export default function Payments() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {players?.map((player: any) => (
+                          {playersArray.map((player: any) => (
                             <SelectItem key={player.id} value={player.id.toString()}>
                               {player.name}
                             </SelectItem>
@@ -256,7 +264,7 @@ export default function Payments() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">Pending Count</p>
-                <p className="text-2xl font-bold text-foreground">{pendingPayments?.length || 0}</p>
+                <p className="text-2xl font-bold text-foreground">{paymentsArray.length}</p>
               </div>
             </div>
           </CardContent>
@@ -275,7 +283,7 @@ export default function Payments() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Players</SelectItem>
-              {players?.map((player: any) => (
+              {playersArray.map((player: any) => (
                 <SelectItem key={player.id} value={player.id.toString()}>
                   {player.name}
                 </SelectItem>
