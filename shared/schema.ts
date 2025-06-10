@@ -171,6 +171,11 @@ export const invoices = pgTable("invoices", {
 
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertLocalUserSchema = createInsertSchema(localUsers).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+});
 export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
 export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
 export const insertMatchSchema = createInsertSchema(matches).omit({ id: true }).extend({
@@ -193,8 +198,10 @@ export const insertPaymentSchema = z.object({
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, issueDate: true });
 
 // Types
-export type CricketUser = typeof users.$inferSelect;
-export type InsertCricketUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type UpsertUser = typeof users.$inferInsert;
+export type LocalUser = typeof localUsers.$inferSelect;
+export type InsertLocalUser = z.infer<typeof insertLocalUserSchema>;
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Player = typeof players.$inferSelect;
