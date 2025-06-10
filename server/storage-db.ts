@@ -211,6 +211,45 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async setPasswordResetToken(email: string, token: string, expiresAt: Date): Promise<boolean> {
+    try {
+      await db.update(localUsers)
+        .set({ 
+          resetPasswordToken: token, 
+          resetPasswordExpires: expiresAt 
+        })
+        .where(eq(localUsers.email, email));
+      return true;
+    } catch (error) {
+      console.error('Error setting reset token:', error);
+      return false;
+    }
+  }
+
+  async getUserByResetToken(token: string): Promise<any | undefined> {
+    const [user] = await db.select()
+      .from(localUsers)
+      .where(eq(localUsers.resetPasswordToken, token));
+    return user || undefined;
+  }
+
+  async resetPassword(token: string, newPasswordHash: string): Promise<boolean> {
+    try {
+      const [updated] = await db.update(localUsers)
+        .set({ 
+          passwordHash: newPasswordHash,
+          resetPasswordToken: null,
+          resetPasswordExpires: null
+        })
+        .where(eq(localUsers.resetPasswordToken, token))
+        .returning();
+      return !!updated;
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return false;
+    }
+  }
+
   // Teams
   async getTeam(id: number): Promise<Team | undefined> {
     const [team] = await db.select().from(teams).where(eq(teams.id, id));

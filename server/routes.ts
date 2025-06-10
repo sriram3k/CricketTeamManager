@@ -130,14 +130,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.getLocalUserByEmail(email);
       
       if (user) {
-        // In production, send actual email with reset token
-        console.log(`Password reset requested for: ${email}`);
+        const { generateResetToken, sendPasswordResetEmail } = await import('./passwordResetService');
+        const resetToken = generateResetToken();
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+        
+        // Save reset token to database
+        const tokenSaved = await storage.setPasswordResetToken(email, resetToken, expiresAt);
+        
+        if (tokenSaved) {
+          // Send password reset email
+          const emailSent = await sendPasswordResetEmail({
+            to: email,
+            resetToken,
+            userName: user.firstName || user.username || 'User'
+          });
+          
+          if (!emailSent) {
+            console.warn(`Password reset email could not be sent to ${email}, but token was saved`);
+          }
+        }
       }
       
       // Always return success to prevent email enumeration
       res.json({ message: "If the email exists, a reset link has been sent" });
     } catch (error) {
+      console.error("Forgot password error:", error);
       res.status(400).json({ message: "Invalid email" });
+    }
+  });
+
+  // Password reset route
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+      
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+      
+      // Find user by reset token
+      const user = await storage.getUserByResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+      
+      // Check if token is expired
+      if (user.resetPasswordExpires && new Date() > user.resetPasswordExpires) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+      
+      // Hash new password
+      const passwordHash = await bcrypt.hash(password, 10);
+      
+      // Update password and clear reset token
+      const resetSuccess = await storage.resetPassword(token, passwordHash);
+      
+      if (resetSuccess) {
+        res.json({ message: "Password has been reset successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to reset password" });
+      }
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
   // Teams
