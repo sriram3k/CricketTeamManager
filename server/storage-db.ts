@@ -11,7 +11,7 @@ import {
   type Payment, type InsertPayment, type Invoice, type InsertInvoice
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
@@ -373,9 +373,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPendingPaymentsByTeam(teamId: number): Promise<Payment[]> {
+    // Get player IDs for the team first
+    const teamPlayers = await db.select({ id: players.id }).from(players).where(eq(players.teamId, teamId));
+    const playerIds = teamPlayers.map(p => p.id);
+    
+    if (playerIds.length === 0) return [];
+    
+    // Get pending payments for those players
     return await db.select().from(payments)
-      .innerJoin(players, eq(payments.playerId, players.id))
-      .where(and(eq(players.teamId, teamId), eq(payments.status, "pending")));
+      .where(and(
+        eq(payments.status, "pending"),
+        inArray(payments.playerId, playerIds)
+      ));
   }
 
   // Invoices

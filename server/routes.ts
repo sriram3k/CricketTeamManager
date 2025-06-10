@@ -240,9 +240,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/payments/:id", async (req, res) => {
-    const payment = await storage.updatePayment(parseInt(req.params.id), req.body);
-    if (!payment) return res.status(404).json({ message: "Payment not found" });
-    res.json(payment);
+    try {
+      // Transform date strings to Date objects
+      const updates = { ...req.body };
+      if (updates.dueDate && typeof updates.dueDate === 'string') {
+        updates.dueDate = new Date(updates.dueDate);
+      }
+      if (updates.paidDate && typeof updates.paidDate === 'string') {
+        updates.paidDate = new Date(updates.paidDate);
+      }
+      
+      const payment = await storage.updatePayment(parseInt(req.params.id), updates);
+      if (!payment) return res.status(404).json({ message: "Payment not found" });
+      res.json(payment);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid payment update data", error });
+    }
   });
 
   // Invoices
@@ -267,9 +280,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/invoices/:id", async (req, res) => {
-    const invoice = await storage.updateInvoice(parseInt(req.params.id), req.body);
-    if (!invoice) return res.status(404).json({ message: "Invoice not found" });
-    res.json(invoice);
+    try {
+      // Transform date strings to Date objects
+      const updates = { ...req.body };
+      if (updates.dueDate && typeof updates.dueDate === 'string') {
+        updates.dueDate = new Date(updates.dueDate);
+      }
+      if (updates.paidDate && typeof updates.paidDate === 'string') {
+        updates.paidDate = new Date(updates.paidDate);
+      }
+      
+      const invoice = await storage.updateInvoice(parseInt(req.params.id), updates);
+      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
+      res.json(invoice);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid invoice update data", error });
+    }
   });
 
   // Dashboard Stats
