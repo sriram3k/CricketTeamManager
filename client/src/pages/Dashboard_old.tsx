@@ -302,7 +302,7 @@ export default function Dashboard() {
                         </Button>
                       </Link>
                       );
-                    })}
+                    }) : <p>No recent matches</p>}
                   </div>
                 </div>
 
@@ -576,7 +576,8 @@ export default function Dashboard() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -604,7 +605,8 @@ export default function Dashboard() {
                       Available
                     </Badge>
                   </div>
-                ))}
+                  );
+                })}
                 
                 <Button variant="outline" className="w-full mt-4">
                   Send Availability Request
@@ -623,9 +625,9 @@ export default function Dashboard() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Pending Payments</span>
                   <span className="text-sm font-medium text-accent">
-                    S${pendingPayments?.reduce((total: number, payment: any) => 
+                    S${Array.isArray(pendingPayments) ? pendingPayments.reduce((total: number, payment: any) => 
                       total + parseFloat(payment.amount), 0
-                    ).toLocaleString() || '0'}
+                    ).toLocaleString() : '0'}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
