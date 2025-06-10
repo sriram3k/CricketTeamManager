@@ -297,13 +297,13 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div>
-                          <p className="font-medium">{
-                            (() => {
-                              const homeTeam = allTeams.find((t: any) => t.id === match.homeTeamId);
-                              const awayTeam = allTeams.find((t: any) => t.id === match.awayTeamId);
+                          <p className="font-medium">
+                            {(() => {
+                              const homeTeam = (allTeams as any[]).find((t: any) => t.id === match.homeTeamId);
+                              const awayTeam = (allTeams as any[]).find((t: any) => t.id === match.awayTeamId);
                               return `${homeTeam?.name || 'Home Team'} vs ${awayTeam?.name || 'Away Team'}`;
-                            })()
-                          }</p>
+                            })()}
+                          </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{new Date(match.date).toLocaleDateString()}</span>
                             <span>•</span>
