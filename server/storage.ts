@@ -14,15 +14,15 @@ import { eq, and, desc, count } from "drizzle-orm";
 
 export interface IStorage {
   // Replit Auth Users
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUser(id: string): Promise<any | undefined>;
+  upsertUser(user: any): Promise<any>;
   
   // Local Users (email/password auth)
-  getLocalUser(id: number): Promise<LocalUser | undefined>;
-  getLocalUserByEmail(email: string): Promise<LocalUser | undefined>;
-  getLocalUserByUsername(username: string): Promise<LocalUser | undefined>;
-  createLocalUser(user: InsertLocalUser): Promise<LocalUser>;
-  updateLocalUser(id: number, updates: Partial<LocalUser>): Promise<LocalUser | undefined>;
+  getLocalUser(id: number): Promise<any | undefined>;
+  getLocalUserByEmail(email: string): Promise<any | undefined>;
+  getLocalUserByUsername(username: string): Promise<any | undefined>;
+  createLocalUser(user: any): Promise<any>;
+  updateLocalUser(id: number, updates: any): Promise<any | undefined>;
 
   // Teams
   getTeam(id: number): Promise<Team | undefined>;
@@ -91,7 +91,8 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
+  private users: Map<string, any> = new Map();
+  private localUsers: Map<string, any> = new Map();
   private teams: Map<number, Team> = new Map();
   private players: Map<number, Player> = new Map();
   private matches: Map<number, Match> = new Map();
@@ -233,17 +234,63 @@ export class MemStorage implements IStorage {
     });
   }
 
-  // Users
-  async getUser(id: number): Promise<User | undefined> {
+  // Replit Auth Users
+  async getUser(id: string): Promise<any | undefined> {
     return this.users.get(id);
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
+  async upsertUser(user: any): Promise<any> {
+    const newUser = { ...user, id: user.id || Date.now().toString() };
+    this.users.set(newUser.id, newUser);
+    return newUser;
+  }
+
+  // Local Users (email/password auth)
+  async getLocalUser(id: number): Promise<any | undefined> {
+    return this.localUsers.get(id.toString());
+  }
+
+  async getLocalUserByEmail(email: string): Promise<any | undefined> {
+    for (const user of this.localUsers.values()) {
+      if (user.email === email) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async getLocalUserByUsername(username: string): Promise<any | undefined> {
+    for (const user of this.localUsers.values()) {
+      if (user.username === username) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  async createLocalUser(userData: any): Promise<any> {
+    const id = this.currentUserId++;
+    const user = { ...userData, id };
+    this.localUsers.set(id.toString(), user);
+    return user;
+  }
+
+  async updateLocalUser(id: number, updates: any): Promise<any | undefined> {
+    const user = this.localUsers.get(id.toString());
+    if (user) {
+      const updatedUser = { ...user, ...updates };
+      this.localUsers.set(id.toString(), updatedUser);
+      return updatedUser;
+    }
+    return undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<any | undefined> {
     return Array.from(this.users.values()).find(user => user.username === username);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const user: User = { 
+  async createUser(insertUser: any): Promise<any> {
+    const user = { 
       ...insertUser, 
       id: this.currentUserId++,
       role: insertUser.role || "player",
@@ -540,4 +587,4 @@ export class MemStorage implements IStorage {
 // Import the database storage implementation
 import { DatabaseStorage } from "./storage-db";
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

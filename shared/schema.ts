@@ -197,11 +197,7 @@ export const insertPaymentSchema = z.object({
 });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, issueDate: true });
 
-// Types
-export type User = typeof users.$inferSelect;
-export type UpsertUser = typeof users.$inferInsert;
-export type LocalUser = typeof localUsers.$inferSelect;
-export type InsertLocalUser = z.infer<typeof insertLocalUserSchema>;
+// Types for main entities
 export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Player = typeof players.$inferSelect;

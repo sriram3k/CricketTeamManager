@@ -21,30 +21,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async initializeSampleData() {
-    // Check if data already exists
-    const existingUsers = await db.select().from(users).limit(1);
+    // Check if data already exists in local_users table
+    const existingUsers = await db.select().from(localUsers).limit(1);
     if (existingUsers.length > 0) return;
 
-    // Create sample users with different roles
-    const [manager] = await db.insert(users).values({
+    // Create sample local users with different roles
+    const [manager] = await db.insert(localUsers).values({
       username: "manager",
+      email: "manager@cricketteam.com",
       password: "password",
-      role: "admin",
-      teamId: null
+      firstName: "Team",
+      lastName: "Manager",
+      role: "admin"
     }).returning();
 
-    const [organizer] = await db.insert(users).values({
+    const [organizer] = await db.insert(localUsers).values({
       username: "organizer",
+      email: "organizer@cricketteam.com", 
       password: "password",
-      role: "organizer",
-      teamId: null
+      firstName: "Event",
+      lastName: "Organizer",
+      role: "organizer"
     }).returning();
 
-    const [player] = await db.insert(users).values({
+    const [player] = await db.insert(localUsers).values({
       username: "player",
+      email: "player@cricketteam.com",
       password: "password",
-      role: "player",
-      teamId: null
+      firstName: "Star",
+      lastName: "Player",
+      role: "player"
     }).returning();
 
     // Create sample team
@@ -55,7 +61,7 @@ export class DatabaseStorage implements IStorage {
     }).returning();
 
     // Update manager's teamId
-    await db.update(users).set({ teamId: team.id }).where(eq(users.id, manager.id));
+    await db.update(localUsers).set({ teamId: team.id }).where(eq(localUsers.id, manager.id));
 
     // Create sample players
     const playerData = [
