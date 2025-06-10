@@ -13,6 +13,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertAvailabilityRequestSchema } from "@shared/schema";
 import { Plus, Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
 
 const availabilityFormSchema = insertAvailabilityRequestSchema.extend({
   venue: z.string().min(1, "Venue is required"),
@@ -22,6 +23,10 @@ const availabilityFormSchema = insertAvailabilityRequestSchema.extend({
 export default function Availability() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const teamId = 1; // This would come from user context
+  const { user } = useAuth();
+  
+  // Check if user is a player (role-based access control)
+  const isPlayer = user?.role === "player";
 
   const { data: availabilityRequests, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
@@ -92,14 +97,15 @@ export default function Availability() {
           <p className="text-muted-foreground">Request and track player availability for matches</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              New Request
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
+        {!isPlayer && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                New Request
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Send Availability Request</DialogTitle>
             </DialogHeader>
@@ -199,7 +205,8 @@ export default function Availability() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        )}
       </div>
 
       {/* Stats Cards */}
