@@ -63,7 +63,25 @@ export default function PlayerManagement() {
   });
 
   const deletePlayerMutation = useMutation({
-    mutationFn: (playerId: number) => apiRequest("DELETE", `/api/players/${playerId}`, {}),
+    mutationFn: async (playerId: number) => {
+      try {
+        const response = await fetch(`/api/players/${playerId}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Delete player error:", error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/players`] });
       toast({
@@ -71,7 +89,8 @@ export default function PlayerManagement() {
         description: "The player has been successfully removed from the team.",
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Delete mutation error:", error);
       toast({
         title: "Error",
         description: "Failed to delete player. Please try again.",
@@ -334,8 +353,9 @@ export default function PlayerManagement() {
                         <AlertDialogAction
                           onClick={() => deletePlayerMutation.mutate(player.id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={deletePlayerMutation.isPending}
                         >
-                          Delete Player
+                          {deletePlayerMutation.isPending ? "Deleting..." : "Delete Player"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
