@@ -55,6 +55,10 @@ export default function Dashboard() {
     queryKey: [`/api/teams/${teamId}/availability-requests`],
   });
 
+  const { data: allTeams = [] } = useQuery({
+    queryKey: ['/api/teams'],
+  });
+
   const matchForm = useForm({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
@@ -293,7 +297,13 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div>
-                          <p className="font-medium">Mumbai Warriors vs Opponent Team</p>
+                          <p className="font-medium">{
+                            (() => {
+                              const homeTeam = allTeams.find((t: any) => t.id === match.homeTeamId);
+                              const awayTeam = allTeams.find((t: any) => t.id === match.awayTeamId);
+                              return `${homeTeam?.name || 'Home Team'} vs ${awayTeam?.name || 'Away Team'}`;
+                            })()
+                          }</p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{new Date(match.date).toLocaleDateString()}</span>
                             <span>•</span>
