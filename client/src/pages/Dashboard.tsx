@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,24 +54,16 @@ export default function Dashboard() {
   // Helper function to get team names for matches
   const getMatchTitle = (match: any, teams: any[]) => {
     const homeTeam = teams.find(t => t.id === match.homeTeamId);
-    
-    // Debug logging to see what data we're working with
-    console.log('Match data:', match);
-    console.log('OpponentName:', match.opponentName);
-    console.log('AwayTeamId:', match.awayTeamId);
-    
     const opponentName = match.opponentName || 
                         (match.awayTeamId ? teams.find(t => t.id === match.awayTeamId)?.name : null) || 
                         'Away Team';
-    
-    console.log('Final opponent name:', opponentName);
     return `${homeTeam?.name || 'Home Team'} vs ${opponentName}`;
   };
   
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
 
   // Force cache invalidation on component mount to ensure fresh data
-  React.useEffect(() => {
+  useEffect(() => {
     queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
     queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
   }, [teamId]);
