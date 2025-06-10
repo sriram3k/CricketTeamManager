@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { signupSchema, type SignupInput } from "@shared/schema";
+import { signupFormSchema, type SignupFormInput, type SignupInput } from "@shared/schema";
 import { Trophy, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
 export default function Signup() {
@@ -19,8 +19,8 @@ export default function Signup() {
   const [authError, setAuthError] = useState<string>("");
   const { toast } = useToast();
 
-  const form = useForm<SignupInput & { confirmPassword: string }>({
-    resolver: zodResolver(signupSchema),
+  const form = useForm<SignupFormInput>({
+    resolver: zodResolver(signupFormSchema),
     defaultValues: {
       username: "",
       email: "",
@@ -56,7 +56,7 @@ export default function Signup() {
     },
   });
 
-  const onSubmit = (data: SignupInput & { confirmPassword: string }) => {
+  const onSubmit = (data: SignupFormInput) => {
     setAuthError("");
     const { confirmPassword, ...signupData } = data;
     signupMutation.mutate(signupData);

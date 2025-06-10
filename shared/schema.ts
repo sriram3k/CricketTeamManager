@@ -306,7 +306,7 @@ export type LocalUser = typeof localUsers.$inferSelect;
 export type InsertLocalUser = typeof localUsers.$inferInsert;
 
 // Auth-related schemas
-export const signupSchema = z.object({
+export const signupFormSchema = z.object({
   username: z.string().min(1, "Username is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -318,6 +318,14 @@ export const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
+export const signupSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+});
+
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
@@ -326,9 +334,6 @@ export const loginSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
-
-// Type definitions
-export type SignupInput = z.infer<typeof signupSchema>;
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),
@@ -339,6 +344,8 @@ export const resetPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+// Type definitions
+export type SignupFormInput = z.infer<typeof signupFormSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
