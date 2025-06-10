@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -143,8 +144,11 @@ export default function Dashboard() {
   const deleteMatchMutation = useMutation({
     mutationFn: (matchId: number) => apiRequest("DELETE", `/api/matches/${matchId}`),
     onSuccess: () => {
+      // Invalidate all match-related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/dashboard`] });
+      queryClient.invalidateQueries({ queryKey: ['cricket-data'] });
       alert("Match deleted successfully!");
     },
     onError: (error: any) => {
@@ -195,9 +199,8 @@ export default function Dashboard() {
   };
 
   const handleDeleteMatch = (matchId: number) => {
-    if (confirm("Are you sure you want to delete this match?")) {
-      deleteMatchMutation.mutate(matchId);
-    }
+    console.log("Deleting match with ID:", matchId);
+    deleteMatchMutation.mutate(matchId);
   };
 
   if (isLoading) {
@@ -420,13 +423,34 @@ export default function Dashboard() {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Match
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteMatch(match.id)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete Match
-                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem 
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Match
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Match</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this match? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteMatch(match.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Delete Match
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
