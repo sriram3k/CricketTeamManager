@@ -37,7 +37,20 @@ export default function PlayerDashboard() {
 
   const respondToAvailabilityMutation = useMutation({
     mutationFn: async ({ requestId, response }: { requestId: number; response: string }) => {
-      return apiRequest("/api/availability/respond", "POST", { requestId, response });
+      // Get the player ID from the user's email
+      const playersResponse = await fetch('/api/players');
+      const players = await playersResponse.json();
+      const currentPlayer = players.find((p: any) => p.email === user?.email);
+      
+      if (!currentPlayer) {
+        throw new Error('Player not found');
+      }
+      
+      return apiRequest("/api/availability-responses", "POST", { 
+        requestId, 
+        playerId: currentPlayer.id,
+        status: response 
+      });
     },
     onSuccess: () => {
       toast({
