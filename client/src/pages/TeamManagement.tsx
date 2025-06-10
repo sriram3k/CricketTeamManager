@@ -34,12 +34,12 @@ export default function TeamManagement() {
 
   // Fetch teams for the current user (manager)
   const { data: teams = [], isLoading, error } = useQuery<Team[]>({
-    queryKey: ["/api/teams/manager", user?.id],
+    queryKey: ["/api/teams/manager", (user as any)?.id],
     queryFn: () => {
-      if (!user?.id) return [];
-      return fetch(`/api/teams/manager/${user.id}`).then(res => res.json());
+      if (!(user as any)?.id) return [];
+      return fetch(`/api/teams/manager/${(user as any).id}`).then(res => res.json());
     },
-    enabled: !!user?.id,
+    enabled: !!(user as any)?.id,
   });
 
   const createForm = useForm<TeamFormData>({
@@ -53,7 +53,7 @@ export default function TeamManagement() {
       contactPhone: "",
       website: "",
       teamColor: "#3B82F6",
-      managerId: user?.id || 0,
+      managerId: (user as any)?.id || 0,
     },
   });
 
