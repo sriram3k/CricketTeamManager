@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertPlayerSchema } from "@shared/schema";
-import { Plus, Edit, UserX, UserCheck, Trash2 } from "lucide-react";
+import { insertPlayerSchema, insertPlayerInviteSchema } from "@shared/schema";
+import { Plus, Edit, UserX, UserCheck, Trash2, Mail, Send } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,14 +22,25 @@ const playerFormSchema = insertPlayerSchema.extend({
   position: z.string().min(1, "Position is required"),
 });
 
+const inviteFormSchema = insertPlayerInviteSchema.extend({
+  email: z.string().email("Invalid email address"),
+  inviterName: z.string().min(1, "Your name is required"),
+  teamName: z.string().min(1, "Team name is required"),
+});
+
 export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const teamId = 1; // This would come from user context
   const { toast } = useToast();
 
   const { data: players, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/players`],
+  });
+
+  const { data: invites } = useQuery({
+    queryKey: [`/api/teams/${teamId}/invites`],
   });
 
   const form = useForm({
@@ -40,6 +52,18 @@ export default function PlayerManagement() {
       position: "",
       jerseyNumber: undefined,
       isActive: true,
+    },
+  });
+
+  const inviteForm = useForm({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      teamId: teamId,
+      email: "",
+      inviterName: "Team Manager",
+      teamName: "My Cricket Team",
+      position: "",
+      message: "",
     },
   });
 
@@ -94,6 +118,29 @@ export default function PlayerManagement() {
       toast({
         title: "Error",
         description: "Failed to delete player. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendInviteMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", `/api/teams/${teamId}/invite`, data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/invites`] });
+      setIsInviteDialogOpen(false);
+      inviteForm.reset();
+      toast({
+        title: "Invitation sent successfully",
+        description: response.emailSent 
+          ? `Invitation email sent to ${response.invite.email}`
+          : `Invitation created but email could not be sent. The invite is saved in the system.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error("Invite mutation error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send invitation. Please try again.",
         variant: "destructive",
       });
     },

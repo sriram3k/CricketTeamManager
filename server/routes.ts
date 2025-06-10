@@ -464,6 +464,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Register invite routes
+  registerInviteRoutes(app);
+
   const httpServer = createServer(app);
   return httpServer;
 }

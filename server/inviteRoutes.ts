@@ -44,8 +44,8 @@ export function registerInviteRoutes(app: Express) {
         to: validatedData.email,
         inviterName: validatedData.inviterName,
         teamName: validatedData.teamName,
-        position: validatedData.position,
-        message: validatedData.message,
+        position: validatedData.position || undefined,
+        message: validatedData.message || undefined,
         inviteUrl,
       });
 
