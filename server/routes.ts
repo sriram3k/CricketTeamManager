@@ -200,6 +200,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Temporary endpoint to generate reset token (remove after SendGrid is configured)
+  app.post('/api/auth/generate-reset-token', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      const user = await storage.getLocalUserByEmail(email);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const { generateResetToken } = await import('./passwordResetService');
+      const resetToken = generateResetToken();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      
+      // Save reset token to database
+      const tokenSaved = await storage.setPasswordResetToken(email, resetToken, expiresAt);
+      
+      if (tokenSaved) {
+        const resetUrl = `http://localhost:5000/reset-password?token=${resetToken}`;
+        res.json({ 
+          message: "Reset token generated successfully",
+          resetUrl,
+          token: resetToken,
+          expiresAt: expiresAt.toISOString()
+        });
+      } else {
+        res.status(500).json({ message: "Failed to generate reset token" });
+      }
+    } catch (error) {
+      console.error("Generate reset token error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Teams
   app.get("/api/teams", async (req, res) => {
     const teams = await storage.getAllTeams();

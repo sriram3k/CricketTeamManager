@@ -16,6 +16,7 @@ import Analytics from "@/pages/Analytics";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
 import AppLayout from "@/components/layout/AppLayout";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import TourRestartButton from "@/components/onboarding/TourRestartButton";
@@ -48,6 +49,7 @@ function Router() {
       <Switch>
         <Route path="/signup" component={Signup} />
         <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/" component={Login} />
         <Route component={Login} />
       </Switch>
