@@ -28,7 +28,15 @@ const playerFormSchema = z.object({
   teams: z.array(z.number()).optional(),
 });
 
+const inviteFormSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  teamId: z.number().min(1, "Please select a team"),
+  position: z.string().optional(),
+  message: z.string().optional(),
+});
+
 type PlayerFormData = z.infer<typeof playerFormSchema>;
+type InviteFormData = z.infer<typeof inviteFormSchema>;
 
 export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
