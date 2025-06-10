@@ -64,12 +64,29 @@ export const teams = pgTable("teams", {
 
 export const players = pgTable("players", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  teamId: integer("team_id").notNull(),
+  userId: integer("user_id"),
   name: text("name").notNull(),
-  position: text("position"), // batsman, bowler, all-rounder, wicket-keeper
-  jerseyNumber: integer("jersey_number"),
+  email: text("email"),
+  phone: text("phone"),
+  dateOfBirth: timestamp("date_of_birth"),
+  preferredPosition: text("preferred_position"), // batsman, bowler, all-rounder, wicket-keeper
+  battingStyle: text("batting_style"), // right-handed, left-handed
+  bowlingStyle: text("bowling_style"), // right-arm fast, left-arm spin, etc
   isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Junction table for player-team relationships
+export const playerTeams = pgTable("player_teams", {
+  id: serial("id").primaryKey(),
+  playerId: integer("player_id").notNull(),
+  teamId: integer("team_id").notNull(),
+  jerseyNumber: integer("jersey_number"),
+  position: text("position"), // position in this specific team
+  isActive: boolean("is_active").default(true),
+  joinedAt: timestamp("joined_at").defaultNow(),
+  leftAt: timestamp("left_at"),
 });
 
 export const matches = pgTable("matches", {
@@ -211,7 +228,8 @@ export const insertTeamSchema = createInsertSchema(teams).omit({
   foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
   teamColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Must be a valid hex color").optional(),
 });
-export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
+export const insertPlayerSchema = createInsertSchema(players).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPlayerTeamSchema = createInsertSchema(playerTeams).omit({ id: true, joinedAt: true });
 export const insertMatchSchema = createInsertSchema(matches).omit({ id: true }).extend({
   date: z.string().transform((val) => new Date(val)),
 });
@@ -243,6 +261,8 @@ export type Team = typeof teams.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Player = typeof players.$inferSelect;
 export type InsertPlayer = z.infer<typeof insertPlayerSchema>;
+export type PlayerTeam = typeof playerTeams.$inferSelect;
+export type InsertPlayerTeam = z.infer<typeof insertPlayerTeamSchema>;
 export type Match = typeof matches.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
 export type Innings = typeof innings.$inferSelect;
@@ -274,7 +294,7 @@ export const localUsersRelations = relations(localUsers, ({ one, many }) => ({
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
   manager: one(localUsers, { fields: [teams.managerId], references: [localUsers.id] }),
-  players: many(players),
+  playerTeams: many(playerTeams),
   homeMatches: many(matches, { relationName: "homeTeam" }),
   awayMatches: many(matches, { relationName: "awayTeam" }),
   availabilityRequests: many(availabilityRequests),
@@ -282,11 +302,16 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 }));
 
 export const playersRelations = relations(players, ({ one, many }) => ({
-  user: one(users, { fields: [players.userId], references: [users.id] }),
-  team: one(teams, { fields: [players.teamId], references: [teams.id] }),
+  user: one(localUsers, { fields: [players.userId], references: [localUsers.id] }),
+  playerTeams: many(playerTeams),
   stats: many(playerStats),
   availabilityResponses: many(availabilityResponses),
   payments: many(payments),
+}));
+
+export const playerTeamsRelations = relations(playerTeams, ({ one }) => ({
+  player: one(players, { fields: [playerTeams.playerId], references: [players.id] }),
+  team: one(teams, { fields: [playerTeams.teamId], references: [teams.id] }),
 }));
 
 export const matchesRelations = relations(matches, ({ one, many }) => ({
