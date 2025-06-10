@@ -68,7 +68,7 @@ function Router() {
             <Route path="/" component={PlayerDashboard} />
             <Route path="/availability" component={Availability} />
             <Route path="/payments" component={Payments} />
-            <Route component={PlayerDashboard} />
+            <Route component={NotFound} />
           </>
         ) : (
           // Manager routes - full access
