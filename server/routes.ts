@@ -8,7 +8,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { registerInviteRoutes } from "./inviteRoutes";
 import { z } from "zod";
 import { db } from "./db";
-import { players } from "@shared/schema";
+import { players, payments } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   insertUserSchema, insertTeamSchema, insertPlayerSchema, insertMatchSchema,
@@ -644,6 +644,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/availability-requests/:requestId/responses", async (req, res) => {
     const responses = await storage.getAvailabilityResponsesByRequest(parseInt(req.params.requestId));
     res.json(responses);
+  });
+
+  app.post("/api/availability/respond", async (req: any, res) => {
+    try {
+      const { requestId, response } = req.body;
+      
+      // Get player ID from the logged-in user
+      if (req.session?.localUser) {
+        const localUser = await storage.getLocalUser(req.session.localUser.id);
+        const player = await db.select().from(players).where(eq(players.email, localUser.email)).limit(1);
+        
+        if (player.length > 0) {
+          const responseData = {
+            requestId: parseInt(requestId),
+            playerId: player[0].id,
+            status: response
+          };
+          
+          const availabilityResponse = await storage.createAvailabilityResponse(responseData);
+          res.status(201).json(availabilityResponse);
+        } else {
+          res.status(404).json({ message: "Player not found" });
+        }
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
+    } catch (error) {
+      console.error("Error creating availability response:", error);
+      res.status(400).json({ message: "Invalid availability response data", error });
+    }
   });
 
   app.post("/api/availability-responses", async (req, res) => {
