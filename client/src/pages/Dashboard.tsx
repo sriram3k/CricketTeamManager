@@ -185,7 +185,7 @@ export default function Dashboard() {
       homeTeamId: match.homeTeamId,
       date: dateString,
       venue: match.venue,
-      opponent: "Opponent Team", // You might want to derive this from awayTeamId
+      opponent: match.opponentName || "Opponent Team",
       matchType: match.matchType,
       totalOvers: match.totalOvers,
       matchFee: match.matchFee,
