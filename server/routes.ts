@@ -103,9 +103,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.put("/api/matches/:id", async (req, res) => {
-    const match = await storage.updateMatch(parseInt(req.params.id), req.body);
-    if (!match) return res.status(404).json({ message: "Match not found" });
-    res.json(match);
+    try {
+      // Transform date strings to Date objects
+      const updates = { ...req.body };
+      if (updates.date && typeof updates.date === 'string') {
+        updates.date = new Date(updates.date);
+      }
+      
+      const match = await storage.updateMatch(parseInt(req.params.id), updates);
+      if (!match) return res.status(404).json({ message: "Match not found" });
+      res.json(match);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid match update data", error });
+    }
+  });
+
+  app.delete("/api/matches/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteMatch(parseInt(req.params.id));
+      if (!success) return res.status(404).json({ message: "Match not found" });
+      res.json({ message: "Match deleted successfully" });
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete match", error });
+    }
   });
 
   // Innings

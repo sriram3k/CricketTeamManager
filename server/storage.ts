@@ -37,6 +37,7 @@ export interface IStorage {
   getMatchesByTeam(teamId: number): Promise<Match[]>;
   createMatch(match: InsertMatch): Promise<Match>;
   updateMatch(id: number, updates: Partial<Match>): Promise<Match | undefined>;
+  deleteMatch(id: number): Promise<boolean>;
   getRecentMatches(teamId: number, limit?: number): Promise<Match[]>;
   getLiveMatches(): Promise<Match[]>;
   getUpcomingMatches(teamId: number): Promise<Match[]>;
@@ -326,6 +327,10 @@ export class MemStorage implements IStorage {
     const updatedMatch = { ...match, ...updates };
     this.matches.set(id, updatedMatch);
     return updatedMatch;
+  }
+
+  async deleteMatch(id: number): Promise<boolean> {
+    return this.matches.delete(id);
   }
 
   async getRecentMatches(teamId: number, limit = 10): Promise<Match[]> {

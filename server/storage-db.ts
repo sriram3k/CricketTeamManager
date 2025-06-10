@@ -242,6 +242,15 @@ export class DatabaseStorage implements IStorage {
     return match || undefined;
   }
 
+  async deleteMatch(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(matches).where(eq(matches.id, id));
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   async getRecentMatches(teamId: number, limit = 10): Promise<Match[]> {
     return await db.select().from(matches)
       .where(eq(matches.homeTeamId, teamId))
