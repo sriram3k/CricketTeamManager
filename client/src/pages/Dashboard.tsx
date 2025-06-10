@@ -120,7 +120,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div data-tour="dashboard" className="space-y-8">
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="flex-1 min-w-0">
@@ -143,7 +143,7 @@ export default function Dashboard() {
           </Button>
           <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary/90">
+              <Button data-tour="schedule-match" className="bg-primary hover:bg-primary/90">
                 <Plus className="h-4 w-4 mr-2" />
                 Schedule Match
               </Button>

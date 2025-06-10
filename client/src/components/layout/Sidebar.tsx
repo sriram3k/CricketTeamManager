@@ -43,6 +43,7 @@ export default function Sidebar() {
             return (
               <Link key={item.name} href={item.href}>
                 <div
+                  data-tour={item.dataTour}
                   className={cn(
                     "sidebar-link cursor-pointer",
                     isActive ? "sidebar-link-active" : "sidebar-link-inactive"

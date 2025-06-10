@@ -14,6 +14,7 @@ import Invoices from "@/pages/Invoices";
 import Analytics from "@/pages/Analytics";
 import AppLayout from "@/components/layout/AppLayout";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import TourRestartButton from "@/components/onboarding/TourRestartButton";
 
 function Router() {
   const [isTourOpen, setIsTourOpen] = useState(false);
@@ -40,6 +41,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
+      <TourRestartButton />
     </AppLayout>
   );
 }
