@@ -44,6 +44,13 @@ export default function Dashboard() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isQuickScoreDialogOpen, setIsQuickScoreDialogOpen] = useState(false);
   const teamId = 1;
+
+  // Helper function to get team names for matches
+  const getMatchTitle = (match: any, teams: any[]) => {
+    const homeTeam = teams.find(t => t.id === match.homeTeamId);
+    const awayTeam = teams.find(t => t.id === match.awayTeamId);
+    return `${homeTeam?.name || 'Home Team'} vs ${awayTeam?.name || 'Away Team'}`;
+  };
   
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
 
@@ -297,13 +304,9 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div>
-                          <p className="font-medium">{
-                            (() => {
-                              const homeTeam = allTeams.find((t: any) => t.id === match.homeTeamId);
-                              const awayTeam = allTeams.find((t: any) => t.id === match.awayTeamId);
-                              return `${homeTeam?.name || 'Home Team'} vs ${awayTeam?.name || 'Away Team'}`;
-                            })()
-                          }</p>
+                          <p className="font-medium">
+                            {getMatchTitle(match, allTeams as any[])}
+                          </p>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span>{new Date(match.date).toLocaleDateString()}</span>
                             <span>•</span>
