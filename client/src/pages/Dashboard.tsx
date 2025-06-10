@@ -1,9 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import StatsGrid from "@/components/stats/StatsGrid";
 import { useCricketData } from "@/hooks/use-cricket-data";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { insertMatchSchema } from "@shared/schema";
 import {
   Trophy,
   Users,
@@ -17,7 +28,14 @@ import {
   Target
 } from "lucide-react";
 
+const matchFormSchema = insertMatchSchema.extend({
+  venue: z.string().min(1, "Venue is required"),
+  opponent: z.string().min(1, "Opponent team is required"),
+  matchFee: z.string().min(1, "Match fee is required"),
+});
+
 export default function Dashboard() {
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const teamId = 1; // This would come from user context
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
 
@@ -28,6 +46,70 @@ export default function Dashboard() {
   const { data: availabilityRequests } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
   });
+
+  const { data: allTeams } = useQuery({
+    queryKey: ["/api/teams"],
+  });
+
+  const matchForm = useForm({
+    resolver: zodResolver(matchFormSchema),
+    defaultValues: {
+      homeTeamId: teamId,
+      awayTeamId: 0,
+      date: "",
+      venue: "",
+      status: "scheduled",
+      matchType: "T20",
+      totalOvers: 20,
+      matchFee: "",
+      opponent: "",
+    },
+  });
+
+  const createMatchMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("POST", "/api/matches", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+      setIsScheduleDialogOpen(false);
+      matchForm.reset();
+    },
+    onError: (error: any) => {
+      console.error("Match creation error:", error);
+      alert(`Error scheduling match: ${error.message || 'Unknown error'}`);
+    },
+  });
+
+  const onMatchSubmit = (data: any) => {
+    console.log("Match form submission data:", data);
+    
+    if (!data.awayTeamId || data.awayTeamId === 0) {
+      alert("Please select an opponent team");
+      return;
+    }
+    if (!data.date) {
+      alert("Please select a match date");
+      return;
+    }
+    
+    const matchData = {
+      homeTeamId: teamId,
+      awayTeamId: parseInt(data.awayTeamId),
+      date: new Date(data.date).toISOString(),
+      venue: data.venue,
+      status: "scheduled",
+      matchType: data.matchType,
+      totalOvers: parseInt(data.totalOvers),
+      matchFee: data.matchFee,
+      tossWinner: null,
+      tossDecision: null,
+      result: null,
+      winnerTeamId: null,
+    };
+    
+    console.log("Match data being sent:", matchData);
+    createMatchMutation.mutate(matchData);
+  };
 
   if (isLoading) {
     return (
@@ -59,10 +141,148 @@ export default function Dashboard() {
             <Target className="h-4 w-4 mr-2" />
             Quick Score
           </Button>
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Schedule Match
-          </Button>
+          <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" />
+                Schedule Match
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Schedule New Match</DialogTitle>
+              </DialogHeader>
+              <Form {...matchForm}>
+                <form onSubmit={matchForm.handleSubmit(onMatchSubmit)} className="space-y-4">
+                  <FormField
+                    control={matchForm.control}
+                    name="awayTeamId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Opponent Team</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select opponent team" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {allTeams?.filter((team: any) => team.id !== teamId).map((team: any) => (
+                              <SelectItem key={team.id} value={team.id.toString()}>
+                                {team.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={matchForm.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Match Date & Time</FormLabel>
+                        <FormControl>
+                          <Input type="datetime-local" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={matchForm.control}
+                    name="venue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Venue</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Match venue" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={matchForm.control}
+                    name="matchType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Match Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="T20">T20</SelectItem>
+                            <SelectItem value="ODI">ODI</SelectItem>
+                            <SelectItem value="Test">Test</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={matchForm.control}
+                    name="totalOvers"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total Overs</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            max="50" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={matchForm.control}
+                    name="matchFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Match Fee</FormLabel>
+                        <FormControl>
+                          <Input placeholder="5000.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsScheduleDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={createMatchMutation.isPending}
+                    >
+                      {createMatchMutation.isPending ? "Scheduling..." : "Schedule Match"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
