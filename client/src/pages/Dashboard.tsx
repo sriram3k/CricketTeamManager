@@ -71,6 +71,12 @@ export default function Dashboard() {
     queryKey: ['/api/teams'],
   });
 
+  // Get team data for display
+  const { data: currentTeam } = useQuery({
+    queryKey: [`/api/teams/${teamId}`],
+    queryFn: () => fetch(`/api/teams/${teamId}`).then(res => res.json()),
+  });
+
   const matchForm = useForm({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
@@ -203,12 +209,6 @@ export default function Dashboard() {
   const matches = recentMatches as any[];
   const upcoming = upcomingMatches as any[];
   const requests = availabilityRequests as any[];
-  
-  // Get team data for display
-  const { data: team } = useQuery({
-    queryKey: [`/api/teams/${teamId}`],
-    queryFn: () => fetch(`/api/teams/${teamId}`).then(res => res.json()),
-  });
 
   return (
     <div className="space-y-8">
@@ -217,7 +217,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">CrickIQ - Cricket Team Management</h1>
           <p className="text-muted-foreground mt-2">
-            Smart cricket management platform for {team?.name || 'your team'}
+            Smart cricket management platform for {currentTeam?.name || 'your team'}
           </p>
         </div>
         
@@ -662,7 +662,7 @@ export default function Dashboard() {
                         onClick={() => setIsQuickScoreDialogOpen(false)}
                       >
                         <Play className="h-4 w-4 mr-2" />
-                        {team?.name || 'Team'} vs Opponent - Live
+                        {currentTeam?.name || 'Team'} vs Opponent - Live
                       </Button>
                     </Link>
                   ))
@@ -684,7 +684,7 @@ export default function Dashboard() {
                         onClick={() => setIsQuickScoreDialogOpen(false)}
                       >
                         <Calendar className="h-4 w-4 mr-2" />
-                        {team?.name || 'Team'} vs Opponent - {new Date(match.date).toLocaleDateString()}
+                        {currentTeam?.name || 'Team'} vs Opponent - {new Date(match.date).toLocaleDateString()}
                       </Button>
                     </Link>
                   ))
