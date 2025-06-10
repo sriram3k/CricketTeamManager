@@ -136,9 +136,9 @@ export default function Dashboard() {
       {/* Header with Quick Actions */}
       <div className="mb-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Cricket Team Management</h1>
+          <h1 className="text-3xl font-bold">CrickIQ - Cricket Team Management</h1>
           <p className="text-muted-foreground mt-2">
-            Complete cricket management platform for Mumbai Warriors team
+            Smart cricket management platform for Mumbai Warriors team
           </p>
         </div>
         

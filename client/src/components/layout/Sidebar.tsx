@@ -73,7 +73,7 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center h-16 flex-shrink-0 px-4 bg-primary">
           <Trophy className="text-primary-foreground text-2xl mr-3" />
-          <h1 className="text-primary-foreground text-xl font-bold">CricManager</h1>
+          <h1 className="text-primary-foreground text-xl font-bold">CrickIQ</h1>
         </div>
         
         {/* Navigation */}
