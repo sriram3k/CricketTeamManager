@@ -40,6 +40,7 @@ type InviteFormData = z.infer<typeof inviteFormSchema>;
 
 export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
   const { toast } = useToast();
@@ -64,6 +65,16 @@ export default function PlayerManagement() {
       preferredPosition: "",
       battingStyle: "",
       bowlingStyle: "",
+    },
+  });
+
+  const inviteForm = useForm<InviteFormData>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      email: "",
+      teamId: undefined,
+      position: "",
+      message: "",
     },
   });
 
@@ -133,6 +144,36 @@ export default function PlayerManagement() {
     },
   });
 
+  const sendInviteMutation = useMutation({
+    mutationFn: (data: InviteFormData) => {
+      const team = (userTeams as any[]).find((t: any) => t.id === data.teamId);
+      const inviteData = {
+        email: data.email,
+        teamId: data.teamId,
+        inviterName: `${(user as any)?.firstName || ''} ${(user as any)?.lastName || ''}`.trim() || 'Team Manager',
+        teamName: team?.name || 'Cricket Team',
+        position: data.position,
+        message: data.message,
+      };
+      return apiRequest("POST", "/api/invites/send", inviteData);
+    },
+    onSuccess: () => {
+      setIsInviteDialogOpen(false);
+      inviteForm.reset();
+      toast({
+        title: "Success",
+        description: "Player invitation sent successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: PlayerFormData) => {
     if (editingPlayer) {
       updatePlayerMutation.mutate({ ...data, id: editingPlayer.id });
@@ -181,6 +222,15 @@ export default function PlayerManagement() {
         </div>
         
         <div className="flex gap-2">
+          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Mail className="h-4 w-4 mr-2" />
+                Send Invite
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+          
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={openCreateDialog}>
@@ -450,6 +500,125 @@ export default function PlayerManagement() {
                     : editingPlayer
                     ? "Update Player"
                     : "Create Player"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Invite Dialog */}
+      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Send Player Invitation</DialogTitle>
+          </DialogHeader>
+          <Form {...inviteForm}>
+            <form onSubmit={inviteForm.handleSubmit((data) => sendInviteMutation.mutate(data))} className="space-y-4">
+              <FormField
+                control={inviteForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="player@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={inviteForm.control}
+                name="teamId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(userTeams as any[]).map((team: any) => (
+                            <SelectItem key={team.id} value={team.id.toString()}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={inviteForm.control}
+                name="position"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Position (Optional)</FormLabel>
+                    <FormControl>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="batsman">Batsman</SelectItem>
+                          <SelectItem value="bowler">Bowler</SelectItem>
+                          <SelectItem value="all-rounder">All-rounder</SelectItem>
+                          <SelectItem value="wicket-keeper">Wicket-keeper</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={inviteForm.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Personal Message (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Add a personal message to the invitation..."
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsInviteDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={sendInviteMutation.isPending}
+                >
+                  {sendInviteMutation.isPending ? (
+                    <>
+                      <Send className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Invitation
+                    </>
+                  )}
                 </Button>
               </div>
             </form>
