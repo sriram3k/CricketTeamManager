@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import { signupFormSchema, type SignupFormInput, type SignupInput } from "@shared/schema";
 import { Trophy, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
@@ -18,6 +19,7 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [authError, setAuthError] = useState<string>("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<SignupFormInput>({
     resolver: zodResolver(signupFormSchema),
@@ -44,12 +46,17 @@ export default function Signup() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate and refetch user authentication state
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Account created successfully",
-        description: "Welcome to CrickIQ! You can now sign in.",
+        description: "Welcome to CrickIQ!",
       });
-      window.location.href = "/login";
+      
+      // Navigate to dashboard since user is now authenticated
+      setLocation("/");
     },
     onError: (error: Error) => {
       setAuthError(error.message || "Signup failed. Please try again.");

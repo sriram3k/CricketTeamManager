@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { loginSchema, type LoginInput } from "@shared/schema";
 import { Trophy, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
@@ -18,6 +18,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string>("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -42,12 +43,17 @@ export default function Login() {
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate and refetch user authentication state
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Login successful",
         description: "Welcome back to CrickIQ!",
       });
-      window.location.href = "/";
+      
+      // Navigate to dashboard using programmatic navigation
+      setLocation("/");
     },
     onError: (error: Error) => {
       setAuthError(error.message || "Login failed. Please try again.");
