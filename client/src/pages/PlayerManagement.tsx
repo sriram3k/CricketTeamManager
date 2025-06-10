@@ -9,17 +9,28 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertPlayerSchema, insertPlayerInviteSchema } from "@shared/schema";
-import { Plus, Edit, UserX, UserCheck, Trash2, Mail, Send } from "lucide-react";
+import { Plus, Edit, UserX, UserCheck, Trash2, Mail, Send, Users, Award } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
-const playerFormSchema = insertPlayerSchema.extend({
+const playerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  position: z.string().min(1, "Position is required"),
+  email: z.string().email("Invalid email address").optional(),
+  phone: z.string().optional(),
+  preferredPosition: z.string().optional(),
+  battingStyle: z.string().optional(),
+  bowlingStyle: z.string().optional(),
+  teams: z.array(z.object({
+    teamId: z.number(),
+    position: z.string().optional(),
+    jerseyNumber: z.number().optional(),
+  })).optional(),
 });
 
 const inviteFormSchema = insertPlayerInviteSchema.extend({
@@ -28,37 +39,47 @@ const inviteFormSchema = insertPlayerInviteSchema.extend({
   teamName: z.string().min(1, "Team name is required"),
 });
 
+type PlayerFormData = z.infer<typeof playerFormSchema>;
+
 export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
-  const teamId = 1; // This would come from user context
+  const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const { data: players, isLoading } = useQuery({
-    queryKey: [`/api/teams/${teamId}/players`],
+  // Get all players and user's teams
+  const { data: players = [], isLoading } = useQuery({
+    queryKey: ["/api/players"],
   });
 
-  const { data: invites } = useQuery({
-    queryKey: [`/api/teams/${teamId}/invites`],
+  const { data: userTeams = [] } = useQuery({
+    queryKey: ["/api/teams/manager", (user as any)?.id],
+    enabled: !!(user as any)?.id,
   });
 
-  const form = useForm({
+  const { data: invites = [] } = useQuery({
+    queryKey: ["/api/teams/1/invites"], // Will be updated when we have proper team context
+  });
+
+  const form = useForm<PlayerFormData>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
-      userId: 1,
-      teamId: teamId,
       name: "",
-      position: "",
-      jerseyNumber: undefined,
-      isActive: true,
+      email: "",
+      phone: "",
+      preferredPosition: "",
+      battingStyle: "",
+      bowlingStyle: "",
+      teams: [],
     },
   });
 
   const inviteForm = useForm({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
-      teamId: teamId,
+      teamId: 1,
       email: "",
       inviterName: "Team Manager",
       teamName: "My Cricket Team",

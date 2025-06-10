@@ -7,6 +7,9 @@ const storage = new DatabaseStorage();
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { registerInviteRoutes } from "./inviteRoutes";
 import { z } from "zod";
+import { db } from "./db";
+import { players } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import {
   insertUserSchema, insertTeamSchema, insertPlayerSchema, insertMatchSchema,
   insertInningsSchema, insertBallSchema, insertPlayerStatsSchema,
@@ -339,13 +342,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(players);
   });
 
+  app.get("/api/players", async (req, res) => {
+    try {
+      // Get all players for multi-team management
+      const allPlayers = await db.select({
+        id: players.id,
+        name: players.name,
+        email: players.email,
+        phone: players.phone,
+        preferredPosition: players.preferredPosition,
+        battingStyle: players.battingStyle,
+        bowlingStyle: players.bowlingStyle,
+        isActive: players.isActive,
+        createdAt: players.createdAt,
+      }).from(players).where(eq(players.isActive, true));
+      
+      res.json(allPlayers);
+    } catch (error) {
+      console.error("Error fetching all players:", error);
+      res.status(500).json({ message: "Failed to fetch players" });
+    }
+  });
+
+  app.get("/api/players/:id/teams", async (req, res) => {
+    try {
+      const playerId = parseInt(req.params.id);
+      const playerTeams = await storage.getPlayerTeams(playerId);
+      res.json(playerTeams);
+    } catch (error) {
+      console.error("Error fetching player teams:", error);
+      res.status(500).json({ message: "Failed to fetch player teams" });
+    }
+  });
+
   app.post("/api/players", async (req, res) => {
     try {
-      const playerData = insertPlayerSchema.parse(req.body);
+      const { teams, ...playerData } = req.body;
+      
+      // Create the player first
       const player = await storage.createPlayer(playerData);
+      
+      // If teams are specified, add player to those teams
+      if (teams && Array.isArray(teams)) {
+        for (const teamAssignment of teams) {
+          await storage.addPlayerToTeam(player.id, teamAssignment.teamId, {
+            jerseyNumber: teamAssignment.jerseyNumber,
+            position: teamAssignment.position,
+            isActive: true
+          });
+        }
+      }
+      
       res.status(201).json(player);
     } catch (error) {
+      console.error("Error creating player:", error);
       res.status(400).json({ message: "Invalid player data", error });
+    }
+  });
+
+  app.post("/api/players/:id/teams", async (req, res) => {
+    try {
+      const playerId = parseInt(req.params.id);
+      const { teamId, jerseyNumber, position } = req.body;
+      
+      const playerTeam = await storage.addPlayerToTeam(playerId, teamId, {
+        jerseyNumber,
+        position,
+        isActive: true
+      });
+      
+      res.json(playerTeam);
+    } catch (error) {
+      console.error("Error adding player to team:", error);
+      res.status(400).json({ message: "Failed to add player to team" });
     }
   });
 
