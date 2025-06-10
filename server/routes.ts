@@ -115,7 +115,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(201).json({ user: { id: user.id, email: user.email, username: user.username } });
       });
     } catch (error) {
-      res.status(400).json({ message: "Invalid signup data" });
+      console.error("Signup error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ message: "Invalid signup data", error: error.message });
+      } else {
+        res.status(400).json({ message: "Invalid signup data" });
+      }
     }
   });
 
