@@ -63,7 +63,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: user.lastName
       };
 
-      res.json({ user: { id: user.id, email: user.email, username: user.username } });
+      // Force session save
+      (req as any).session.save((err: any) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ message: "Session creation failed" });
+        }
+        res.json({ user: { id: user.id, email: user.email, username: user.username } });
+      });
     } catch (error) {
       res.status(400).json({ message: "Invalid login data" });
     }
@@ -96,7 +103,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastName: user.lastName
       };
 
-      res.status(201).json({ user: { id: user.id, email: user.email, username: user.username } });
+      // Force session save
+      (req as any).session.save((err: any) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.status(500).json({ message: "Session creation failed" });
+        }
+        res.status(201).json({ user: { id: user.id, email: user.email, username: user.username } });
+      });
     } catch (error) {
       res.status(400).json({ message: "Invalid signup data" });
     }
