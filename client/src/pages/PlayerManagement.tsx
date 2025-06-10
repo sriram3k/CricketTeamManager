@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { insertPlayerSchema, insertPlayerInviteSchema } from "@shared/schema";
 import { Plus, Edit, UserX, UserCheck, Trash2, Mail, Send, Users, Award } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
@@ -26,24 +25,13 @@ const playerFormSchema = z.object({
   preferredPosition: z.string().optional(),
   battingStyle: z.string().optional(),
   bowlingStyle: z.string().optional(),
-  teams: z.array(z.object({
-    teamId: z.number(),
-    position: z.string().optional(),
-    jerseyNumber: z.number().optional(),
-  })).optional(),
-});
-
-const inviteFormSchema = insertPlayerInviteSchema.extend({
-  email: z.string().email("Invalid email address"),
-  inviterName: z.string().min(1, "Your name is required"),
-  teamName: z.string().min(1, "Team name is required"),
+  teams: z.array(z.number()).optional(),
 });
 
 type PlayerFormData = z.infer<typeof playerFormSchema>;
 
 export default function PlayerManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<any>(null);
   const [selectedTeams, setSelectedTeams] = useState<number[]>([]);
   const { toast } = useToast();
@@ -59,10 +47,6 @@ export default function PlayerManagement() {
     enabled: !!(user as any)?.id,
   });
 
-  const { data: invites = [] } = useQuery({
-    queryKey: ["/api/teams/1/invites"], // Will be updated when we have proper team context
-  });
-
   const form = useForm<PlayerFormData>({
     resolver: zodResolver(playerFormSchema),
     defaultValues: {
@@ -72,128 +56,99 @@ export default function PlayerManagement() {
       preferredPosition: "",
       battingStyle: "",
       bowlingStyle: "",
-      teams: [],
-    },
-  });
-
-  const inviteForm = useForm({
-    resolver: zodResolver(inviteFormSchema),
-    defaultValues: {
-      teamId: 1,
-      email: "",
-      inviterName: "Team Manager",
-      teamName: "My Cricket Team",
-      position: "",
-      message: "",
     },
   });
 
   const createPlayerMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/players", data),
+    mutationFn: (data: PlayerFormData) => {
+      const playerData = {
+        ...data,
+        teams: selectedTeams.map(teamId => ({ teamId, position: data.preferredPosition }))
+      };
+      return apiRequest("POST", "/api/players", playerData);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/players`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       setIsDialogOpen(false);
       form.reset();
+      setSelectedTeams([]);
+      toast({
+        title: "Success",
+        description: "Player created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create player",
+        variant: "destructive",
+      });
     },
   });
 
   const updatePlayerMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("PUT", `/api/players/${editingPlayer.id}`, data),
+    mutationFn: (data: any) => apiRequest("PUT", `/api/players/${data.id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/players`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       setIsDialogOpen(false);
       setEditingPlayer(null);
       form.reset();
+      toast({
+        title: "Success",
+        description: "Player updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update player",
+        variant: "destructive",
+      });
     },
   });
 
   const deletePlayerMutation = useMutation({
-    mutationFn: async (playerId: number) => {
-      try {
-        const response = await fetch(`/api/players/${playerId}`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Delete player error:", error);
-        throw error;
-      }
-    },
+    mutationFn: (playerId: number) => apiRequest("DELETE", `/api/players/${playerId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/players`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       toast({
-        title: "Player deleted",
-        description: "The player has been successfully removed from the team.",
+        title: "Success",
+        description: "Player deleted successfully",
       });
     },
     onError: (error: any) => {
-      console.error("Delete mutation error:", error);
       toast({
         title: "Error",
-        description: "Failed to delete player. Please try again.",
+        description: error.message || "Failed to delete player",
         variant: "destructive",
       });
     },
   });
 
-  const sendInviteMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", `/api/teams/${teamId}/invite`, data),
-    onSuccess: (response) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/invites`] });
-      setIsInviteDialogOpen(false);
-      inviteForm.reset();
-      toast({
-        title: "Invitation sent successfully",
-        description: response.emailSent 
-          ? `Invitation email sent to ${response.invite.email}`
-          : `Invitation created but email could not be sent. The invite is saved in the system.`,
-      });
-    },
-    onError: (error: any) => {
-      console.error("Invite mutation error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to send invitation. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: PlayerFormData) => {
     if (editingPlayer) {
-      updatePlayerMutation.mutate(data);
+      updatePlayerMutation.mutate({ ...data, id: editingPlayer.id });
     } else {
       createPlayerMutation.mutate(data);
     }
   };
 
-  const onInviteSubmit = (data: any) => {
-    sendInviteMutation.mutate(data);
+  const openCreateDialog = () => {
+    setEditingPlayer(null);
+    setSelectedTeams([]);
+    form.reset();
+    setIsDialogOpen(true);
   };
 
   const openEditDialog = (player: any) => {
     setEditingPlayer(player);
-    form.reset(player);
-    setIsDialogOpen(true);
-  };
-
-  const openCreateDialog = () => {
-    setEditingPlayer(null);
     form.reset({
-      userId: 1,
-      teamId: teamId,
-      name: "",
-      position: "",
-      jerseyNumber: undefined,
-      isActive: true,
+      name: player.name,
+      email: player.email || "",
+      phone: player.phone || "",
+      preferredPosition: player.preferredPosition || "",
+      battingStyle: player.battingStyle || "",
+      bowlingStyle: player.bowlingStyle || "",
     });
     setIsDialogOpen(true);
   };
@@ -206,8 +161,7 @@ export default function PlayerManagement() {
     );
   }
 
-  const activePlayersCount = players?.filter((p: any) => p.isActive).length || 0;
-  const inactivePlayersCount = players?.filter((p: any) => !p.isActive).length || 0;
+  const activePlayersCount = players.filter((p: any) => p.isActive).length;
 
   return (
     <div className="space-y-6">
@@ -215,7 +169,7 @@ export default function PlayerManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Player Management</h1>
-          <p className="text-muted-foreground">Manage your team roster and player information</p>
+          <p className="text-muted-foreground">Manage your cricket players and team assignments</p>
         </div>
         
         <div className="flex gap-2">
@@ -227,308 +181,54 @@ export default function PlayerManagement() {
               </Button>
             </DialogTrigger>
           </Dialog>
-          
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Mail className="h-4 w-4 mr-2" />
-                Invite Player
-              </Button>
-            </DialogTrigger>
-          </Dialog>
         </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingPlayer ? "Edit Player" : "Add New Player"}
-              </DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Player Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter player name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="position"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Position</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select position" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="batsman">Batsman</SelectItem>
-                          <SelectItem value="bowler">Bowler</SelectItem>
-                          <SelectItem value="all-rounder">All-rounder</SelectItem>
-                          <SelectItem value="wicket-keeper">Wicket-keeper</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="jerseyNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Jersey Number (Optional)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter jersey number" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={createPlayerMutation.isPending || updatePlayerMutation.isPending}>
-                    {editingPlayer ? "Update Player" : "Add Player"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
-
-        {/* Invite Player Dialog */}
-        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Invite Player to Team</DialogTitle>
-            </DialogHeader>
-            <Form {...inviteForm}>
-              <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
-                <FormField
-                  control={inviteForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter email address" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={inviteForm.control}
-                  name="inviterName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={inviteForm.control}
-                  name="teamName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Team Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter team name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={inviteForm.control}
-                  name="position"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Position (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select position" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="">Any Position</SelectItem>
-                          <SelectItem value="batsman">Batsman</SelectItem>
-                          <SelectItem value="bowler">Bowler</SelectItem>
-                          <SelectItem value="all-rounder">All-rounder</SelectItem>
-                          <SelectItem value="wicket-keeper">Wicket-keeper</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={inviteForm.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Personal Message (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Add a personal message to the invitation..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={sendInviteMutation.isPending}>
-                    <Send className="h-4 w-4 mr-2" />
-                    {sendInviteMutation.isPending ? "Sending..." : "Send Invitation"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
-                <UserCheck className="h-4 w-4 text-secondary-foreground" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Active Players</p>
-                <p className="text-2xl font-bold text-foreground">{activePlayersCount}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Players</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activePlayersCount}</div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                <UserX className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Inactive Players</p>
-                <p className="text-2xl font-bold text-foreground">{inactivePlayersCount}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground text-xs font-bold">B</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Batsmen</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {players?.filter((p: any) => p.position === 'batsman' && p.isActive).length || 0}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
-                <span className="text-accent-foreground text-xs font-bold">B</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Bowlers</p>
-                <p className="text-2xl font-bold text-foreground">
-                  {players?.filter((p: any) => p.position === 'bowler' && p.isActive).length || 0}
-                </p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Teams Managed</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{userTeams.length}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Players List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Roster</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {players?.map((player: any) => (
-              <div key={player.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-                    {player.jerseyNumber ? (
-                      <span className="font-bold text-foreground">#{player.jerseyNumber}</span>
-                    ) : (
-                      <span className="font-bold text-muted-foreground">
-                        {player.name.split(' ').map((n: string) => n[0]).join('')}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-foreground">{player.name}</h3>
-                    <p className="text-sm text-muted-foreground capitalize">{player.position}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Badge variant={player.isActive ? "default" : "secondary"}>
-                    {player.isActive ? "Active" : "Inactive"}
-                  </Badge>
+      {/* Players Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {players.map((player: any) => (
+          <Card key={player.id} className="relative group hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{player.name}</CardTitle>
+                <div className="flex gap-1">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => openEditDialog(player)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
-                        className="text-destructive hover:text-destructive"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-600"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -537,14 +237,14 @@ export default function PlayerManagement() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Player</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete {player.name} from the team? This action cannot be undone.
+                          Are you sure you want to delete {player.name}? This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => deletePlayerMutation.mutate(player.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="bg-red-600 hover:bg-red-700"
                           disabled={deletePlayerMutation.isPending}
                         >
                           {deletePlayerMutation.isPending ? "Deleting..." : "Delete Player"}
@@ -554,18 +254,200 @@ export default function PlayerManagement() {
                   </AlertDialog>
                 </div>
               </div>
-            ))}
-            
-            {(!players || players.length === 0) && (
-              <div className="text-center py-8">
-                <UserX className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground">No Players Yet</h3>
-                <p className="text-muted-foreground">Add your first player to get started</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {player.email && (
+                  <p className="text-sm text-muted-foreground">{player.email}</p>
+                )}
+                {player.preferredPosition && (
+                  <Badge variant="secondary">{player.preferredPosition}</Badge>
+                )}
+                {player.battingStyle && (
+                  <p className="text-xs text-muted-foreground">Batting: {player.battingStyle}</p>
+                )}
+                {player.bowlingStyle && (
+                  <p className="text-xs text-muted-foreground">Bowling: {player.bowlingStyle}</p>
+                )}
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Create/Edit Player Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingPlayer ? "Edit Player" : "Add New Player"}
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Player Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter player name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="preferredPosition"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred Position</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select position" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="batsman">Batsman</SelectItem>
+                        <SelectItem value="bowler">Bowler</SelectItem>
+                        <SelectItem value="all-rounder">All-rounder</SelectItem>
+                        <SelectItem value="wicket-keeper">Wicket-keeper</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="battingStyle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Batting Style</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select batting style" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="right-handed">Right-handed</SelectItem>
+                        <SelectItem value="left-handed">Left-handed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="bowlingStyle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bowling Style</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select bowling style" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="right-arm fast">Right-arm Fast</SelectItem>
+                        <SelectItem value="left-arm fast">Left-arm Fast</SelectItem>
+                        <SelectItem value="right-arm medium">Right-arm Medium</SelectItem>
+                        <SelectItem value="left-arm medium">Left-arm Medium</SelectItem>
+                        <SelectItem value="right-arm spin">Right-arm Spin</SelectItem>
+                        <SelectItem value="left-arm spin">Left-arm Spin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {!editingPlayer && userTeams.length > 0 && (
+                <div className="space-y-2">
+                  <FormLabel>Assign to Teams</FormLabel>
+                  <div className="space-y-2">
+                    {userTeams.map((team: any) => (
+                      <div key={team.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`team-${team.id}`}
+                          checked={selectedTeams.includes(team.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTeams([...selectedTeams, team.id]);
+                            } else {
+                              setSelectedTeams(selectedTeams.filter(id => id !== team.id));
+                            }
+                          }}
+                        />
+                        <label htmlFor={`team-${team.id}`} className="text-sm">
+                          {team.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createPlayerMutation.isPending || updatePlayerMutation.isPending}
+                >
+                  {createPlayerMutation.isPending || updatePlayerMutation.isPending
+                    ? "Saving..."
+                    : editingPlayer
+                    ? "Update Player"
+                    : "Create Player"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

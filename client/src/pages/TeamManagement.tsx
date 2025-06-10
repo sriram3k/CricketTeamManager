@@ -18,6 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTeamSchema, type Team, type InsertTeam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Edit2, Users, MapPin, Calendar, Globe, Phone, Mail, Trophy, Palette, Trash2, MoreVertical } from "lucide-react";
+import { useLocation } from "wouter";
 import { z } from "zod";
 
 const teamFormSchema = insertTeamSchema.extend({
@@ -34,6 +35,7 @@ export default function TeamManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
 
   // Fetch teams for the current user (manager)
   const { data: teams = [], isLoading, error } = useQuery<Team[]>({
@@ -528,7 +530,12 @@ export default function TeamManagement() {
                 </div>
 
                 <div className="pt-2 border-t">
-                  <Button variant="outline" size="sm" className="w-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate("/players")}
+                  >
                     <Users className="mr-2 h-3 w-3" />
                     Manage Players
                   </Button>
