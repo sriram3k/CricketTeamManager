@@ -11,7 +11,7 @@ import {
 const mobileNavigation = [
   { name: "Overview", href: "/", icon: BarChart3 },
   { name: "Live", href: "/live-scoring", icon: Target },
-  { name: "Squad", href: "/players", icon: Users },
+  { name: "Squad", href: "/player-management", icon: Users },
   { name: "Fees", href: "/payments", icon: CreditCard },
   { name: "Stats", href: "/analytics", icon: TrendingUp },
 ];
