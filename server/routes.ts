@@ -27,13 +27,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for local user session first
       if (req.session?.localUser) {
         const localUser = req.session.localUser;
-        return res.json({
-          id: localUser.id,
-          email: localUser.email,
-          username: localUser.username,
-          firstName: localUser.firstName,
-          lastName: localUser.lastName
-        });
+        // Get full user data including role from database
+        const fullUser = await storage.getLocalUser(localUser.id);
+        if (fullUser) {
+          return res.json({
+            id: fullUser.id,
+            email: fullUser.email,
+            username: fullUser.username,
+            firstName: fullUser.firstName,
+            lastName: fullUser.lastName,
+            role: fullUser.role
+          });
+        }
       }
 
       // Then check for Replit Auth

@@ -10,5 +10,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isPlayer: user?.role === 'player',
+    isManager: user?.role === 'manager',
   };
 }
