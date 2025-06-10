@@ -55,6 +55,11 @@ export default function Payments() {
       setIsDialogOpen(false);
       form.reset();
     },
+    onError: (error: any) => {
+      console.error("Payment creation error:", error);
+      // Show error message to user
+      alert(`Error creating payment: ${error.message || 'Unknown error'}`);
+    },
   });
 
   const updatePaymentMutation = useMutation({
@@ -69,16 +74,34 @@ export default function Payments() {
   });
 
   const onSubmit = (data: any) => {
+    console.log("Form submission data:", data);
+    
+    // Validate required fields
+    if (!data.playerId) {
+      alert("Please select a player");
+      return;
+    }
+    if (!data.amount || parseFloat(data.amount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+    if (!data.dueDate) {
+      alert("Please select a due date");
+      return;
+    }
+    
     const paymentData = {
-      playerId: data.playerId,
-      matchId: data.matchId,
-      amount: data.amount, // Keep as string for decimal field
-      status: data.status,
+      playerId: parseInt(data.playerId),
+      matchId: parseInt(data.matchId),
+      amount: data.amount.toString(),
+      status: data.status || "pending",
       dueDate: new Date(data.dueDate).toISOString(),
       // Don't include optional fields if they're null/empty
       ...(data.paidDate && { paidDate: new Date(data.paidDate).toISOString() }),
       ...(data.paymentMethod && data.paymentMethod !== "null" && { paymentMethod: data.paymentMethod }),
     };
+    
+    console.log("Payment data being sent:", paymentData);
     createPaymentMutation.mutate(paymentData);
   };
 
