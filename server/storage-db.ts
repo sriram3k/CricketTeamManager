@@ -265,6 +265,15 @@ export class DatabaseStorage implements IStorage {
     return team;
   }
 
+  async updateTeam(id: number, updates: Partial<Team>): Promise<Team | undefined> {
+    const updateData = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    const [team] = await db.update(teams).set(updateData).where(eq(teams.id, id)).returning();
+    return team || undefined;
+  }
+
   async getAllTeams(): Promise<Team[]> {
     return await db.select().from(teams);
   }

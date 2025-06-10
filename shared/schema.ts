@@ -48,7 +48,18 @@ export const teams = pgTable("teams", {
   name: text("name").notNull(),
   managerId: integer("manager_id").notNull(),
   description: text("description"),
+  homeGround: text("home_ground"),
+  captainId: integer("captain_id"),
+  viceCaptainId: integer("vice_captain_id"),
+  teamType: text("team_type").default("recreational"), // recreational, competitive, professional
+  contactEmail: text("contact_email"),
+  contactPhone: text("contact_phone"),
+  website: text("website"),
+  foundedYear: integer("founded_year"),
+  teamColor: text("team_color").default("#3B82F6"),
+  isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const players = pgTable("players", {
@@ -192,7 +203,14 @@ export const insertLocalUserSchema = createInsertSchema(localUsers).omit({
   createdAt: true, 
   updatedAt: true 
 });
-export const insertTeamSchema = createInsertSchema(teams).omit({ id: true, createdAt: true });
+export const insertTeamSchema = createInsertSchema(teams).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true 
+}).extend({
+  foundedYear: z.number().min(1800).max(new Date().getFullYear()).optional(),
+  teamColor: z.string().regex(/^#[0-9A-F]{6}$/i, "Must be a valid hex color").optional(),
+});
 export const insertPlayerSchema = createInsertSchema(players).omit({ id: true });
 export const insertMatchSchema = createInsertSchema(matches).omit({ id: true }).extend({
   date: z.string().transform((val) => new Date(val)),
