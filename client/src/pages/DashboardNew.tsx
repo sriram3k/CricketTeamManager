@@ -286,8 +286,8 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {matches && matches.length > 0 ? (
                   matches.slice(0, 4).map((match: any) => (
-                    <div key={match.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-                      <div className="flex items-center space-x-4">
+                    <div key={match.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors gap-3">
+                      <div className="flex items-center space-x-4 min-w-0 flex-1">
                         <div className="flex-shrink-0">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             match.status === 'live' ? 'bg-red-100 text-red-600' :
@@ -303,24 +303,24 @@ export default function Dashboard() {
                             )}
                           </div>
                         </div>
-                        <div>
-                          <p className="font-medium">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm sm:text-base truncate">
                             {getMatchTitle(match, allTeams as any[])}
                           </p>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
                             <span>{new Date(match.date).toLocaleDateString()}</span>
                             <span>•</span>
                             <span className="capitalize">{match.matchType}</span>
                             {match.venue && (
                               <>
                                 <span>•</span>
-                                <span>{match.venue}</span>
+                                <span className="truncate">{match.venue}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="flex-shrink-0 self-start sm:self-center">
                         {match.status === 'live' && (
                           <Badge variant="destructive" className="bg-red-500">
                             <span className="animate-pulse mr-1">●</span> LIVE
