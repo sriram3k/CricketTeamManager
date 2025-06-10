@@ -570,6 +570,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(requests);
   });
 
+  app.get("/api/availability/team/:teamId", async (req, res) => {
+    const requests = await storage.getAvailabilityRequestsByTeam(parseInt(req.params.teamId));
+    res.json(requests);
+  });
+
   app.post("/api/availability-requests", async (req, res) => {
     try {
       const requestData = insertAvailabilityRequestSchema.parse(req.body);
