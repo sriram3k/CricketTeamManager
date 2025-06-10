@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ const matchFormSchema = insertMatchSchema.extend({
 
 export default function Dashboard() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isQuickScoreDialogOpen, setIsQuickScoreDialogOpen] = useState(false);
   const teamId = 1; // This would come from user context
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
 
@@ -157,10 +159,93 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="mt-4 flex md:mt-0 md:ml-4 space-x-2">
-          <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
-            <Target className="h-4 w-4 mr-2" />
-            Quick Score
-          </Button>
+          <Dialog open={isQuickScoreDialogOpen} onOpenChange={setIsQuickScoreDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground">
+                <Target className="h-4 w-4 mr-2" />
+                Quick Score
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Quick Score Match</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Select a match to start scoring or continue live scoring
+                </p>
+                
+                {/* Live Matches */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Live Matches</h4>
+                  <div className="space-y-2">
+                    {recentMatches?.filter((match: any) => match.status === 'live').length > 0 ? (
+                      recentMatches?.filter((match: any) => match.status === 'live').map((match: any) => (
+                        <Link key={match.id} href="/live-scoring">
+                          <Button 
+                            variant="outline" 
+                            className="w-full justify-start bg-green-50 hover:bg-green-100 border-green-200"
+                            onClick={() => setIsQuickScoreDialogOpen(false)}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                              <span className="text-sm">Match {match.id} - {match.venue}</span>
+                            </div>
+                          </Button>
+                        </Link>
+                      ))
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No live matches</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upcoming Matches */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Upcoming Matches</h4>
+                  <div className="space-y-2">
+                    {upcomingMatches?.slice(0, 3).map((match: any) => (
+                      <Link key={match.id} href="/live-scoring">
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-start"
+                          onClick={() => setIsQuickScoreDialogOpen(false)}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-sm">Match {match.id} - {match.venue}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {new Date(match.date).toLocaleDateString()}
+                            </Badge>
+                          </div>
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="pt-2 border-t">
+                  <div className="flex space-x-2">
+                    <Link href="/live-scoring" className="flex-1">
+                      <Button 
+                        className="w-full" 
+                        onClick={() => setIsQuickScoreDialogOpen(false)}
+                      >
+                        <Target className="h-4 w-4 mr-2" />
+                        Live Scoring
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsQuickScoreDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
             <DialogTrigger asChild>
               <Button data-tour="schedule-match" className="bg-primary hover:bg-primary/90">
