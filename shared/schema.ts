@@ -306,15 +306,13 @@ export type LocalUser = typeof localUsers.$inferSelect;
 export type InsertLocalUser = typeof localUsers.$inferInsert;
 
 // Auth-related schemas
-export const signupSchema = createInsertSchema(localUsers).pick({
-  username: true,
-  email: true,
-  password: true,
-  firstName: true,
-  lastName: true,
-}).extend({
+export const signupSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -328,6 +326,9 @@ export const loginSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().email("Invalid email address"),
 });
+
+// Type definitions
+export type SignupInput = z.infer<typeof signupSchema>;
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is required"),

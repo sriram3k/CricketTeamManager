@@ -20,12 +20,7 @@ export default function Signup() {
   const { toast } = useToast();
 
   const form = useForm<SignupInput & { confirmPassword: string }>({
-    resolver: zodResolver(signupSchema.extend({
-      confirmPassword: signupSchema.shape.password,
-    }).refine((data) => data.password === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    })),
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       username: "",
       email: "",
