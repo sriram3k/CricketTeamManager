@@ -13,10 +13,16 @@ import { db } from "./db";
 import { eq, and, desc, count } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // Replit Auth Users
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Local Users (email/password auth)
+  getLocalUser(id: number): Promise<LocalUser | undefined>;
+  getLocalUserByEmail(email: string): Promise<LocalUser | undefined>;
+  getLocalUserByUsername(username: string): Promise<LocalUser | undefined>;
+  createLocalUser(user: InsertLocalUser): Promise<LocalUser>;
+  updateLocalUser(id: number, updates: Partial<LocalUser>): Promise<LocalUser | undefined>;
 
   // Teams
   getTeam(id: number): Promise<Team | undefined>;
