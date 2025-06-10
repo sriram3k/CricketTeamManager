@@ -31,7 +31,7 @@ export class DatabaseStorage implements IStorage {
     const [manager] = await db.insert(localUsers).values({
       username: "manager",
       email: "manager@cricketteam.com",
-      password: "password",
+      passwordHash: "$2b$10$encrypted_password_hash_here",
       firstName: "Team",
       lastName: "Manager",
       role: "admin"
@@ -176,6 +176,39 @@ export class DatabaseStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
+  }
+
+  // Local Users (email/password auth)
+  async getLocalUser(id: number): Promise<any | undefined> {
+    const [user] = await db.select().from(localUsers).where(eq(localUsers.id, id));
+    return user || undefined;
+  }
+
+  async getLocalUserByEmail(email: string): Promise<any | undefined> {
+    const [user] = await db.select().from(localUsers).where(eq(localUsers.email, email));
+    return user || undefined;
+  }
+
+  async getLocalUserByUsername(username: string): Promise<any | undefined> {
+    const [user] = await db.select().from(localUsers).where(eq(localUsers.username, username));
+    return user || undefined;
+  }
+
+  async createLocalUser(userData: any): Promise<any> {
+    const [user] = await db.insert(localUsers).values({
+      email: userData.email,
+      username: userData.username,
+      passwordHash: userData.passwordHash,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: userData.role || 'player'
+    }).returning();
+    return user;
+  }
+
+  async updateLocalUser(id: number, updates: any): Promise<any | undefined> {
+    const [user] = await db.update(localUsers).set(updates).where(eq(localUsers.id, id)).returning();
+    return user || undefined;
   }
 
   // Teams

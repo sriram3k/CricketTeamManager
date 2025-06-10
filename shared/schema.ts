@@ -30,7 +30,7 @@ export const localUsers = pgTable("local_users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  passwordHash: text("password_hash").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
   role: text("role").notNull().default("player"), // player, admin, organizer
