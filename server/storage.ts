@@ -1,13 +1,14 @@
 import {
   users, teams, players, matches, innings, balls, playerStats,
-  availabilityRequests, availabilityResponses, payments, invoices,
+  availabilityRequests, availabilityResponses, payments, invoices, playerInvites,
   type User, type InsertUser, type Team, type InsertTeam,
   type Player, type InsertPlayer, type Match, type InsertMatch,
   type Innings, type InsertInnings, type Ball, type InsertBall,
   type PlayerStats, type InsertPlayerStats,
   type AvailabilityRequest, type InsertAvailabilityRequest,
   type AvailabilityResponse, type InsertAvailabilityResponse,
-  type Payment, type InsertPayment, type Invoice, type InsertInvoice
+  type Payment, type InsertPayment, type Invoice, type InsertInvoice,
+  type PlayerInvite, type InsertPlayerInvite
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count } from "drizzle-orm";

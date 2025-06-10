@@ -169,6 +169,22 @@ export const invoices = pgTable("invoices", {
   corporateId: integer("corporate_id").notNull(),
 });
 
+// Player invitations table
+export const playerInvites = pgTable("player_invites", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").notNull(),
+  email: text("email").notNull(),
+  inviterName: text("inviter_name").notNull(),
+  teamName: text("team_name").notNull(),
+  position: text("position"),
+  message: text("message"),
+  token: text("token").notNull().unique(),
+  status: text("status").notNull().default("pending"), // pending, accepted, expired
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
 // Insert Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertLocalUserSchema = createInsertSchema(localUsers).omit({ 
@@ -196,6 +212,12 @@ export const insertPaymentSchema = z.object({
   paymentMethod: z.string().optional(),
 });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, issueDate: true });
+export const insertPlayerInviteSchema = createInsertSchema(playerInvites).omit({ 
+  id: true, 
+  createdAt: true, 
+  acceptedAt: true,
+  token: true
+});
 
 // Types for main entities
 export type Team = typeof teams.$inferSelect;
@@ -218,6 +240,8 @@ export type Payment = typeof payments.$inferSelect;
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
+export type PlayerInvite = typeof playerInvites.$inferSelect;
+export type InsertPlayerInvite = z.infer<typeof insertPlayerInviteSchema>;
 
 // Database Relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -295,6 +319,10 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
 export const invoicesRelations = relations(invoices, ({ one }) => ({
   team: one(teams, { fields: [invoices.teamId], references: [teams.id] }),
   match: one(matches, { fields: [invoices.matchId], references: [matches.id] }),
+}));
+
+export const playerInvitesRelations = relations(playerInvites, ({ one }) => ({
+  team: one(teams, { fields: [playerInvites.teamId], references: [teams.id] }),
 }));
 
 // Types for Replit Auth
