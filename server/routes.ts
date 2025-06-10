@@ -436,6 +436,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(matches);
   });
 
+  app.get("/api/matches/team/:teamId", async (req, res) => {
+    const matches = await storage.getMatchesByTeam(parseInt(req.params.teamId));
+    res.json(matches);
+  });
+
   app.get("/api/teams/:teamId/matches/recent", async (req, res) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
     const matches = await storage.getRecentMatches(parseInt(req.params.teamId), limit);
