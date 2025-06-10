@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import {
   Trophy,
   Target,
@@ -66,6 +67,12 @@ const navigation = [
 
 export default function Sidebar() {
   const [location] = useLocation();
+  const teamId = 1;
+
+  const { data: team } = useQuery({
+    queryKey: [`/api/teams/${teamId}`],
+    queryFn: () => fetch(`/api/teams/${teamId}`).then(res => res.json()),
+  });
 
   return (
     <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-card shadow-lg border-r border-border">
@@ -117,7 +124,7 @@ export default function Sidebar() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-foreground">Team Manager</p>
-              <p className="text-xs text-muted-foreground">Mumbai Warriors</p>
+              <p className="text-xs text-muted-foreground">{team?.name || 'Loading...'}</p>
             </div>
           </div>
         </div>
