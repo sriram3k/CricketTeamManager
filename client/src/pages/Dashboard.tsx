@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,7 +27,10 @@ import {
   CalendarCheck,
   ArrowRight,
   Bell,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from "lucide-react";
 
 const matchFormSchema = z.object({
@@ -43,6 +47,7 @@ const matchFormSchema = z.object({
 export default function Dashboard() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isQuickScoreDialogOpen, setIsQuickScoreDialogOpen] = useState(false);
+  const [editingMatch, setEditingMatch] = useState<any>(null);
   const teamId = 1;
 
   // Helper function to get team names for matches
@@ -110,13 +115,44 @@ export default function Dashboard() {
     },
   });
 
+  const updateMatchMutation = useMutation({
+    mutationFn: (data: { id: number; updates: any }) => 
+      apiRequest("PUT", `/api/matches/${data.id}`, data.updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+      setEditingMatch(null);
+      matchForm.reset();
+      alert("Match updated successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Match update error:", error);
+      const errorMessage = error?.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Error updating match: ${errorMessage}`);
+    },
+  });
+
+  const deleteMatchMutation = useMutation({
+    mutationFn: (matchId: number) => apiRequest("DELETE", `/api/matches/${matchId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+      alert("Match deleted successfully!");
+    },
+    onError: (error: any) => {
+      console.error("Match deletion error:", error);
+      const errorMessage = error?.response?.data?.message || error.message || 'Unknown error occurred';
+      alert(`Error deleting match: ${errorMessage}`);
+    },
+  });
+
   const onMatchSubmit = (data: any) => {
     const matchData = {
       homeTeamId: teamId,
       awayTeamId: 2,
       date: data.date,
       venue: data.venue,
-      status: "scheduled",
+      status: data.status || "scheduled",
       matchType: data.matchType,
       totalOvers: data.totalOvers,
       matchFee: data.matchFee,
@@ -126,7 +162,33 @@ export default function Dashboard() {
       winnerTeamId: null,
     };
     
-    createMatchMutation.mutate(matchData);
+    if (editingMatch) {
+      updateMatchMutation.mutate({ id: editingMatch.id, updates: matchData });
+    } else {
+      createMatchMutation.mutate(matchData);
+    }
+  };
+
+  const handleEditMatch = (match: any) => {
+    setEditingMatch(match);
+    const dateString = new Date(match.date).toISOString().slice(0, 16);
+    matchForm.reset({
+      homeTeamId: match.homeTeamId,
+      date: dateString,
+      venue: match.venue,
+      opponent: "Opponent Team", // You might want to derive this from awayTeamId
+      matchType: match.matchType,
+      totalOvers: match.totalOvers,
+      matchFee: match.matchFee,
+      status: match.status,
+    });
+    setIsScheduleDialogOpen(true);
+  };
+
+  const handleDeleteMatch = (matchId: number) => {
+    if (confirm("Are you sure you want to delete this match?")) {
+      deleteMatchMutation.mutate(matchId);
+    }
   };
 
   if (isLoading) {
@@ -320,7 +382,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex-shrink-0 self-start sm:self-center">
+                      <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-center">
                         {match.status === 'live' && (
                           <Badge variant="destructive" className="bg-red-500">
                             <span className="animate-pulse mr-1">●</span> LIVE
@@ -336,6 +398,28 @@ export default function Dashboard() {
                             Upcoming
                           </Badge>
                         )}
+                        
+                        {/* Match Actions Dropdown */}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditMatch(match)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Match
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteMatch(match.id)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Match
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))
@@ -435,10 +519,16 @@ export default function Dashboard() {
       </div>
 
       {/* Dialogs */}
-      <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
+      <Dialog open={isScheduleDialogOpen} onOpenChange={(open) => {
+        setIsScheduleDialogOpen(open);
+        if (!open) {
+          setEditingMatch(null);
+          matchForm.reset();
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Schedule New Match</DialogTitle>
+            <DialogTitle>{editingMatch ? 'Edit Match' : 'Schedule New Match'}</DialogTitle>
           </DialogHeader>
           <Form {...matchForm}>
             <form onSubmit={matchForm.handleSubmit(onMatchSubmit)} className="space-y-4">
