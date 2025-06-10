@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTeamSchema, type Team, type InsertTeam } from "@shared/schema";
@@ -28,11 +29,17 @@ export default function TeamManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   // Fetch teams for the current user (manager)
   const { data: teams = [], isLoading, error } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
+    queryKey: ["/api/teams/manager", user?.id],
+    queryFn: () => {
+      if (!user?.id) return [];
+      return fetch(`/api/teams/manager/${user.id}`).then(res => res.json());
+    },
+    enabled: !!user?.id,
   });
 
   const createForm = useForm<TeamFormData>({
@@ -46,7 +53,7 @@ export default function TeamManagement() {
       contactPhone: "",
       website: "",
       teamColor: "#3B82F6",
-      managerId: 1, // This should be set to the current user ID
+      managerId: user?.id || 0,
     },
   });
 
