@@ -109,6 +109,21 @@ export default function Payments() {
     createPaymentMutation.mutate(paymentData);
   };
 
+  const processPayment = (paymentMethod: string) => {
+    if (selectedPayment) {
+      updatePaymentMutation.mutate({
+        id: selectedPayment.id,
+        data: {
+          status: "paid",
+          paidDate: new Date(),
+          paymentMethod: paymentMethod
+        }
+      });
+      setIsPaymentDialogOpen(false);
+      setSelectedPayment(null);
+    }
+  };
+
   const markAsPaid = (paymentId: number) => {
     updatePaymentMutation.mutate({
       id: paymentId,
@@ -244,8 +259,8 @@ export default function Payments() {
                         <Input 
                           type="date" 
                           {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().split('T')[0] : field.value}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                          value={typeof field.value === 'string' ? field.value : new Date().toISOString().split('T')[0]}
+                          onChange={(e) => field.onChange(e.target.value)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -404,10 +419,13 @@ export default function Payments() {
                       {status === 'pending' && (
                         <Button
                           size="sm"
-                          onClick={() => markAsPaid(paymentId)}
-                          disabled={updatePaymentMutation.isPending}
+                          onClick={() => {
+                            setSelectedPayment(paymentData);
+                            setIsPaymentDialogOpen(true);
+                          }}
+                          className="bg-green-600 hover:bg-green-700"
                         >
-                          Mark as Paid
+                          Pay Now
                         </Button>
                       )}
                       {status === 'paid' && paidDate && (
@@ -439,6 +457,64 @@ export default function Payments() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Processing Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Payment</DialogTitle>
+          </DialogHeader>
+          {selectedPayment && (
+            <div className="space-y-4">
+              <div className="p-4 bg-muted rounded-lg">
+                <h4 className="font-medium">Payment Details</h4>
+                <p className="text-sm text-muted-foreground">Amount: S${parseFloat(selectedPayment.amount).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">Due Date: {new Date(selectedPayment.dueDate).toLocaleDateString()}</p>
+              </div>
+              
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Select Payment Method</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-12 flex-col"
+                    onClick={() => processPayment("UPI")}
+                  >
+                    <span className="text-xs">UPI</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 flex-col"
+                    onClick={() => processPayment("Credit Card")}
+                  >
+                    <span className="text-xs">Credit Card</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 flex-col"
+                    onClick={() => processPayment("Debit Card")}
+                  >
+                    <span className="text-xs">Debit Card</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 flex-col"
+                    onClick={() => processPayment("Net Banking")}
+                  >
+                    <span className="text-xs">Net Banking</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsPaymentDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
