@@ -1,14 +1,88 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import {
   insertUserSchema, insertTeamSchema, insertPlayerSchema, insertMatchSchema,
   insertInningsSchema, insertBallSchema, insertPlayerStatsSchema,
   insertAvailabilityRequestSchema, insertAvailabilityResponseSchema,
-  insertPaymentSchema, insertInvoiceSchema
+  insertPaymentSchema, insertInvoiceSchema, loginSchema, signupSchema, forgotPasswordSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Local authentication routes
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = loginSchema.parse(req.body);
+      const user = await storage.getLocalUserByEmail(email);
+      
+      if (!user || !await bcrypt.compare(password, user.passwordHash)) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      // Create session (simplified - in production use proper session management)
+      res.json({ user: { id: user.id, email: user.email, username: user.username } });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid login data" });
+    }
+  });
+
+  app.post('/api/auth/signup', async (req, res) => {
+    try {
+      const userData = signupSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getLocalUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(409).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(userData.password, 10);
+      
+      const user = await storage.createLocalUser({
+        ...userData,
+        passwordHash,
+      });
+
+      res.status(201).json({ user: { id: user.id, email: user.email, username: user.username } });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid signup data" });
+    }
+  });
+
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      const user = await storage.getLocalUserByEmail(email);
+      
+      if (user) {
+        // In production, send actual email with reset token
+        console.log(`Password reset requested for: ${email}`);
+      }
+      
+      // Always return success to prevent email enumeration
+      res.json({ message: "If the email exists, a reset link has been sent" });
+    } catch (error) {
+      res.status(400).json({ message: "Invalid email" });
+    }
+  });
   // Teams
   app.get("/api/teams", async (req, res) => {
     const teams = await storage.getAllTeams();

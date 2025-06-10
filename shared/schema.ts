@@ -223,11 +223,11 @@ export const usersRelations = relations(users, ({ many }) => ({
 
 export const localUsersRelations = relations(localUsers, ({ one, many }) => ({
   team: one(teams, { fields: [localUsers.teamId], references: [teams.id] }),
-  player: many(players),
+  players: many(players),
 }));
 
 export const teamsRelations = relations(teams, ({ one, many }) => ({
-  manager: one(users, { fields: [teams.managerId], references: [users.id] }),
+  manager: one(localUsers, { fields: [teams.managerId], references: [localUsers.id] }),
   players: many(players),
   homeMatches: many(matches, { relationName: "homeTeam" }),
   awayMatches: many(matches, { relationName: "awayTeam" }),
