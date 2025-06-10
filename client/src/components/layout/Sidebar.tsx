@@ -13,13 +13,55 @@ import {
 } from "lucide-react";
 
 const navigation = [
-  { name: "Team Overview", href: "/", icon: BarChart3, dataTour: "dashboard" },
-  { name: "Live Match", href: "/live-scoring", icon: Target, dataTour: "live-scoring" },
-  { name: "Squad", href: "/players", icon: Users, dataTour: "players" },
-  { name: "Player Availability", href: "/availability", icon: CalendarCheck, dataTour: "availability" },
-  { name: "Match Fees", href: "/payments", icon: CreditCard, dataTour: "payments" },
-  { name: "Club Invoices", href: "/invoices", icon: FileText, dataTour: "invoices" },
-  { name: "Performance Stats", href: "/analytics", icon: TrendingUp, dataTour: "analytics" },
+  { 
+    name: "Dashboard", 
+    description: "Team overview & quick actions",
+    href: "/", 
+    icon: BarChart3, 
+    dataTour: "dashboard" 
+  },
+  { 
+    name: "Live Scoring", 
+    description: "Track match progress in real-time",
+    href: "/live-scoring", 
+    icon: Target, 
+    dataTour: "live-scoring" 
+  },
+  { 
+    name: "Player Management", 
+    description: "Team roster & player details",
+    href: "/player-management", 
+    icon: Users, 
+    dataTour: "players" 
+  },
+  { 
+    name: "Availability", 
+    description: "Player availability for matches",
+    href: "/availability", 
+    icon: CalendarCheck, 
+    dataTour: "availability" 
+  },
+  { 
+    name: "Payments", 
+    description: "Match fees & player payments",
+    href: "/payments", 
+    icon: CreditCard, 
+    dataTour: "payments" 
+  },
+  { 
+    name: "Invoices", 
+    description: "Corporate billing & invoices",
+    href: "/invoices", 
+    icon: FileText, 
+    dataTour: "invoices" 
+  },
+  { 
+    name: "Analytics", 
+    description: "Performance insights & statistics",
+    href: "/analytics", 
+    icon: TrendingUp, 
+    dataTour: "analytics" 
+  },
 ];
 
 export default function Sidebar() {
@@ -35,7 +77,7 @@ export default function Sidebar() {
         </div>
         
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-1">
+        <nav className="flex-1 px-3 py-6 space-y-2">
           {navigation.map((item) => {
             const isActive = location === item.href;
             const Icon = item.icon;
@@ -45,12 +87,22 @@ export default function Sidebar() {
                 <div
                   data-tour={item.dataTour}
                   className={cn(
-                    "sidebar-link cursor-pointer",
-                    isActive ? "sidebar-link-active" : "sidebar-link-inactive"
+                    "group flex flex-col p-3 rounded-lg transition-all duration-200 cursor-pointer",
+                    isActive 
+                      ? "bg-primary text-primary-foreground shadow-md" 
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
+                  <div className="flex items-center space-x-3">
+                    <Icon className={cn("h-5 w-5 flex-shrink-0", isActive ? "text-primary-foreground" : "")} />
+                    <span className="font-medium">{item.name}</span>
+                  </div>
+                  <p className={cn(
+                    "text-xs mt-1 ml-8 leading-relaxed",
+                    isActive ? "text-primary-foreground/80" : "text-muted-foreground/70"
+                  )}>
+                    {item.description}
+                  </p>
                 </div>
               </Link>
             );

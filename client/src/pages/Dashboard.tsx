@@ -50,15 +50,15 @@ export default function Dashboard() {
   const teamId = 1; // This would come from user context
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
 
-  const { data: pendingPayments } = useQuery({
+  const { data: pendingPayments = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/payments/pending`],
   });
 
-  const { data: availabilityRequests } = useQuery({
+  const { data: availabilityRequests = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
   });
 
-  const { data: allTeams } = useQuery({
+  const { data: allTeams = [] } = useQuery({
     queryKey: ["/api/teams"],
   });
 
@@ -470,7 +470,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Matches Won</p>
-              <p className="text-2xl font-bold text-green-600">{dashboardStats?.matchesWon || 0}</p>
+              <p className="text-2xl font-bold text-green-600">{dashboardStats && typeof dashboardStats === 'object' && 'matchesWon' in dashboardStats ? dashboardStats.matchesWon : 0}</p>
               <p className="text-xs text-muted-foreground mt-1">This season</p>
             </div>
             <Trophy className="h-8 w-8 text-green-600" />
@@ -481,7 +481,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Players</p>
-              <p className="text-2xl font-bold text-blue-600">{dashboardStats?.activePlayers || 0}</p>
+              <p className="text-2xl font-bold text-blue-600">{dashboardStats && typeof dashboardStats === 'object' && 'activePlayers' in dashboardStats ? dashboardStats.activePlayers : 0}</p>
               <p className="text-xs text-muted-foreground mt-1">Available for selection</p>
             </div>
             <Users className="h-8 w-8 text-blue-600" />
