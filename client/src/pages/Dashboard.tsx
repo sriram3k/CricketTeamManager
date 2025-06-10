@@ -53,8 +53,10 @@ export default function Dashboard() {
   // Helper function to get team names for matches
   const getMatchTitle = (match: any, teams: any[]) => {
     const homeTeam = teams.find(t => t.id === match.homeTeamId);
-    const awayTeam = teams.find(t => t.id === match.awayTeamId);
-    return `${homeTeam?.name || 'Home Team'} vs ${awayTeam?.name || 'Away Team'}`;
+    const opponentName = match.opponentName || 
+                        (match.awayTeamId ? teams.find(t => t.id === match.awayTeamId)?.name : null) || 
+                        'Away Team';
+    return `${homeTeam?.name || 'Home Team'} vs ${opponentName}`;
   };
   
   const { dashboardStats, recentMatches, upcomingMatches, isLoading } = useCricketData(teamId);
@@ -155,7 +157,8 @@ export default function Dashboard() {
   const onMatchSubmit = (data: any) => {
     const matchData = {
       homeTeamId: teamId,
-      awayTeamId: 2,
+      awayTeamId: null,
+      opponentName: data.opponent,
       date: data.date,
       venue: data.venue,
       status: data.status || "scheduled",
