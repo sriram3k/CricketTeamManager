@@ -260,8 +260,8 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Live Matches</h4>
                   <div className="space-y-2">
-                    {recentMatches?.filter((match: any) => match.status === 'live').length > 0 ? (
-                      recentMatches?.filter((match: any) => match.status === 'live').map((match: any) => (
+                    {recentMatches && Array.isArray(recentMatches) && recentMatches.filter((match: any) => match.status === 'live').length > 0 ? (
+                      recentMatches.filter((match: any) => match.status === 'live').map((match: any) => (
                         <Link key={match.id} href="/live-scoring">
                           <Button 
                             variant="outline" 
@@ -285,7 +285,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Upcoming Matches</h4>
                   <div className="space-y-2">
-                    {upcomingMatches?.slice(0, 3).map((match: any) => (
+                    {upcomingMatches && Array.isArray(upcomingMatches) ? upcomingMatches.slice(0, 3).map((match: any) => (
                       <Link key={match.id} href="/live-scoring">
                         <Button 
                           variant="outline" 
@@ -470,7 +470,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Matches Won</p>
-              <p className="text-2xl font-bold text-green-600">{dashboardStats && typeof dashboardStats === 'object' && 'matchesWon' in dashboardStats ? dashboardStats.matchesWon : 0}</p>
+              <p className="text-2xl font-bold text-green-600">{(dashboardStats as any)?.matchesWon || 0}</p>
               <p className="text-xs text-muted-foreground mt-1">This season</p>
             </div>
             <Trophy className="h-8 w-8 text-green-600" />
@@ -481,7 +481,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Active Players</p>
-              <p className="text-2xl font-bold text-blue-600">{dashboardStats && typeof dashboardStats === 'object' && 'activePlayers' in dashboardStats ? dashboardStats.activePlayers : 0}</p>
+              <p className="text-2xl font-bold text-blue-600">{(dashboardStats as any)?.activePlayers || 0}</p>
               <p className="text-xs text-muted-foreground mt-1">Available for selection</p>
             </div>
             <Users className="h-8 w-8 text-blue-600" />
@@ -492,7 +492,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Upcoming Matches</p>
-              <p className="text-2xl font-bold text-orange-600">{dashboardStats?.upcomingMatches || 0}</p>
+              <p className="text-2xl font-bold text-orange-600">{(dashboardStats as any)?.upcomingMatches || 0}</p>
               <p className="text-xs text-muted-foreground mt-1">Scheduled games</p>
             </div>
             <Calendar className="h-8 w-8 text-orange-600" />
@@ -503,7 +503,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pending Payments</p>
-              <p className="text-2xl font-bold text-red-600">{dashboardStats?.pendingPayments || 0}</p>
+              <p className="text-2xl font-bold text-red-600">{(dashboardStats as any)?.pendingPayments || 0}</p>
               <p className="text-xs text-muted-foreground mt-1">Require attention</p>
             </div>
             <DollarSign className="h-8 w-8 text-red-600" />
@@ -521,7 +521,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentMatches?.slice(0, 3).map((match) => (
+                {recentMatches && Array.isArray(recentMatches) ? recentMatches.slice(0, 4).map((match: any) => (
                   <div key={match.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
@@ -588,7 +588,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {availabilityRequests?.slice(0, 3).map((request) => (
+                {availabilityRequests && Array.isArray(availabilityRequests) ? availabilityRequests.slice(0, 3).map((request: any) => (
                   <div key={request.id} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
