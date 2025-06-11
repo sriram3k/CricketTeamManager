@@ -249,6 +249,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Local logout route
+  app.post('/api/auth/logout', async (req, res) => {
+    try {
+      // Clear local session
+      if ((req as any).session?.localUser) {
+        (req as any).session.destroy((err: any) => {
+          if (err) {
+            console.error('Session destroy error:', err);
+            return res.status(500).json({ message: "Logout failed" });
+          }
+          res.clearCookie('connect.sid'); // Clear session cookie
+          res.json({ message: "Logged out successfully" });
+        });
+      } else {
+        // If no local session, just respond success
+        res.json({ message: "Logged out successfully" });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "Logout failed" });
+    }
+  });
+
   // Temporary endpoint to generate reset token (remove after SendGrid is configured)
   app.post('/api/auth/generate-reset-token', async (req, res) => {
     try {

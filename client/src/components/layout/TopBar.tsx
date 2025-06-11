@@ -4,12 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function TopBar() {
   const { user } = useAuth();
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    try {
+      // Try local logout first
+      await apiRequest("/api/auth/logout", "POST", {});
+      
+      // Clear query cache
+      queryClient.clear();
+      
+      // Redirect to login page
+      window.location.href = "/";
+    } catch (error) {
+      // If local logout fails, try Replit logout
+      window.location.href = "/api/logout";
+    }
   };
 
   const getUserInitials = () => {
