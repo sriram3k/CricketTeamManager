@@ -51,6 +51,7 @@ export default function Payments() {
       playerId: 1,
       matchId: 1,
       amount: "",
+      purpose: "",
       status: "pending",
       dueDate: new Date().toISOString().split('T')[0], // Format for date input
       paymentMethod: "",
@@ -222,6 +223,23 @@ export default function Payments() {
                           type="number" 
                           step="0.01"
                           placeholder="Enter amount" 
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="purpose"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purpose</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g., Match fee, Equipment, Travel" 
                           {...field}
                         />
                       </FormControl>

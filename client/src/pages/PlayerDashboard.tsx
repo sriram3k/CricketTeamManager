@@ -23,12 +23,25 @@ export default function PlayerDashboard() {
     queryKey: ["/api/auth/user"],
   });
 
-  const { data: matches = [] } = useQuery({
+  const { data: allMatches = [] } = useQuery({
     queryKey: ["/api/matches"],
   });
 
+  // Filter matches for the current player's team
+  const matches = allMatches.filter((match: any) => 
+    currentPlayer?.teamId && (match.homeTeamId === currentPlayer.teamId || match.awayTeamId === currentPlayer.teamId)
+  );
+
+  const { data: playerData } = useQuery({
+    queryKey: ["/api/players"],
+    enabled: !!user?.email,
+  });
+
+  const currentPlayer = playerData?.find((p: any) => p.email === user?.email);
+
   const { data: payments = [] } = useQuery({
-    queryKey: ["/api/payments"],
+    queryKey: [`/api/players/${currentPlayer?.id}/payments`],
+    enabled: !!currentPlayer?.id,
   });
 
   const { data: availabilityRequests = [] } = useQuery({
@@ -37,11 +50,6 @@ export default function PlayerDashboard() {
 
   const respondToAvailabilityMutation = useMutation({
     mutationFn: async ({ requestId, response }: { requestId: number; response: string }) => {
-      // Get the player ID from the user's email
-      const playersResponse = await fetch('/api/players');
-      const players = await playersResponse.json();
-      const currentPlayer = players.find((p: any) => p.email === user?.email);
-      
       if (!currentPlayer) {
         throw new Error('Player not found');
       }
@@ -63,6 +71,28 @@ export default function PlayerDashboard() {
       toast({
         title: "Error",
         description: "Failed to submit availability response.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markPaymentPaidMutation = useMutation({
+    mutationFn: (paymentId: number) => 
+      apiRequest("PUT", `/api/payments/${paymentId}`, { 
+        status: "paid",
+        paidDate: new Date().toISOString()
+      }),
+    onSuccess: () => {
+      toast({
+        title: "Payment recorded",
+        description: "Payment has been marked as paid.",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/players/${currentPlayer?.id}/payments`] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update payment status.",
         variant: "destructive",
       });
     },
@@ -222,7 +252,7 @@ export default function PlayerDashboard() {
                     <div key={payment.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-semibold">Match Fee</h4>
+                          <h4 className="font-semibold">{payment.purpose || 'Match Fee'}</h4>
                           <p className="text-sm text-gray-600">
                             Match on {new Date(payment.match?.date || '').toLocaleDateString()}
                           </p>
@@ -233,6 +263,14 @@ export default function PlayerDashboard() {
                         <div className="text-right">
                           <p className="text-lg font-bold">${payment.amount}</p>
                           {getStatusBadge(payment.status)}
+                          <Button 
+                            size="sm" 
+                            className="mt-2"
+                            onClick={() => markPaymentPaidMutation.mutate(payment.id)}
+                            disabled={markPaymentPaidMutation.isPending}
+                          >
+                            Mark as Paid
+                          </Button>
                         </div>
                       </div>
                     </div>
