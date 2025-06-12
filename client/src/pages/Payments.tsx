@@ -99,11 +99,16 @@ export default function Payments() {
       alert("Please select a due date");
       return;
     }
+    if (!data.purpose || data.purpose.trim() === "") {
+      alert("Please enter the purpose of payment");
+      return;
+    }
     
     const paymentData = {
       playerId: parseInt(data.playerId),
       matchId: parseInt(data.matchId),
       amount: data.amount.toString(),
+      purpose: data.purpose || "Match fee",
       status: data.status || "pending",
       dueDate: new Date(data.dueDate).toISOString(),
       // Don't include optional fields if they're null/empty
