@@ -16,8 +16,14 @@ import { Plus, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 
-const paymentFormSchema = insertPaymentSchema.extend({
+const paymentFormSchema = z.object({
+  playerId: z.number(),
+  matchId: z.number(),
   amount: z.string().min(1, "Amount is required"),
+  purpose: z.string().min(1, "Purpose is required"),
+  status: z.string().default("pending"),
+  dueDate: z.string(),
+  paidDate: z.string().optional(),
   paymentMethod: z.string().optional(),
 });
 
@@ -111,15 +117,18 @@ export default function Payments() {
     }
     
     const paymentData = {
-      playerId: parseInt(data.playerId),
-      matchId: parseInt(data.matchId),
-      amount: data.amount.toString(),
-      purpose: data.purpose || "Match fee",
-      status: data.status || "pending",
-      dueDate: new Date(data.dueDate).toISOString(),
-      // Don't include optional fields if they're null/empty
-      ...(data.paidDate && { paidDate: new Date(data.paidDate).toISOString() }),
-      ...(data.paymentMethod && data.paymentMethod !== "null" && { paymentMethod: data.paymentMethod }),
+      playerId: Number(data.playerId),
+      matchId: Number(data.matchId),
+      amount: String(data.amount),
+      purpose: String(data.purpose),
+      status: "pending",
+      dueDate: data.dueDate,
+      ...(data.paymentMethod && data.paymentMethod.trim() !== "" && { 
+        paymentMethod: String(data.paymentMethod) 
+      }),
+      ...(data.paidDate && data.paidDate.trim() !== "" && { 
+        paidDate: data.paidDate 
+      }),
     };
     
     console.log("Payment data being sent:", paymentData);
