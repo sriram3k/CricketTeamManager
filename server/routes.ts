@@ -769,8 +769,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/payments", async (req, res) => {
+  app.post("/api/payments", async (req: any, res) => {
     try {
+      // Check authentication - either Replit auth or local session
+      if (!req.isAuthenticated() && !req.session?.localUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       console.log("Received payment data:", JSON.stringify(req.body, null, 2));
       const paymentData = insertPaymentSchema.parse(req.body);
       console.log("Parsed payment data:", JSON.stringify(paymentData, null, 2));
