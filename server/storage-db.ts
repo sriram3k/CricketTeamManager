@@ -19,8 +19,8 @@ import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
   constructor() {
-    // Sample data initialization disabled to fix authentication errors
-    // this.initializeSampleData().catch(console.error);
+    // Initialize sample data with consistent match information
+    this.initializeSampleData().catch(console.error);
   }
 
   private async initializeSampleData() {
@@ -115,16 +115,43 @@ export class DatabaseStorage implements IStorage {
       matchFee: "6000.00"
     }).returning();
 
-    // Create sample availability request
+    // Create sample availability request that matches the actual match data
     await db.insert(availabilityRequests).values({
       teamId: team.id,
       matchId: upcomingMatch.id,
       requestDate: new Date(),
       matchDate: futureMatch,
-      venue: "Eden Gardens, Kolkata",
+      venue: "Eden Gardens, Kolkata", 
       opponent: "Kolkata Titans",
       deadline: new Date(today.getTime() + 24 * 60 * 60 * 1000),
       message: "Important T20 match against Kolkata Titans. Please confirm your availability."
+    });
+
+    // Create additional availability request for another match to show consistency
+    const [anotherMatch] = await db.insert(matches).values({
+      homeTeamId: team.id,
+      awayTeamId: 2, // Team Spirits
+      date: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+      venue: "Central Cricket Ground",
+      status: "scheduled",
+      tossWinner: null,
+      tossDecision: null,
+      matchType: "T20",
+      totalOvers: 20,
+      result: null,
+      winnerTeamId: null,
+      matchFee: "4500.00"
+    }).returning();
+
+    await db.insert(availabilityRequests).values({
+      teamId: team.id,
+      matchId: anotherMatch.id,
+      requestDate: new Date(),
+      matchDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
+      venue: "Central Cricket Ground",
+      opponent: "Team Spirits",
+      deadline: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+      message: "T20 match against Team Spirits. Please confirm your availability."
     });
 
     // Create sample payments - insert one at a time to handle schema
