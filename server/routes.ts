@@ -771,11 +771,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/payments", async (req, res) => {
     try {
+      console.log("Received payment data:", JSON.stringify(req.body, null, 2));
       const paymentData = insertPaymentSchema.parse(req.body);
+      console.log("Parsed payment data:", JSON.stringify(paymentData, null, 2));
       const payment = await storage.createPayment(paymentData);
       res.status(201).json(payment);
     } catch (error) {
-      res.status(400).json({ message: "Invalid payment data", error });
+      console.error("Payment creation error:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      }
+      res.status(400).json({ 
+        message: "Invalid payment data", 
+        error: error instanceof Error ? error.message : String(error),
+        details: error
+      });
     }
   });
 
