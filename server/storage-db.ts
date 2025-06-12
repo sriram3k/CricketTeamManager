@@ -127,27 +127,26 @@ export class DatabaseStorage implements IStorage {
       message: "Important T20 match against Kolkata Titans. Please confirm your availability."
     });
 
-    // Create sample payments
-    await db.insert(payments).values([
-      {
-        playerId: createdPlayers[0].id,
-        matchId: completedMatch.id,
-        amount: "500.00",
-        status: "pending",
-        dueDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
-        paidDate: null,
-        paymentMethod: null
-      },
-      {
-        playerId: createdPlayers[1].id,
-        matchId: completedMatch.id,
-        amount: "500.00",
-        status: "paid",
-        dueDate: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000),
-        paidDate: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000),
-        paymentMethod: "upi"
-      }
-    ]);
+    // Create sample payments - insert one at a time to handle schema
+    await db.insert(payments).values({
+      playerId: createdPlayers[0].id,
+      matchId: completedMatch.id,
+      amount: "500.00",
+      purpose: "Match fee",
+      status: "pending",
+      dueDate: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
+    });
+
+    await db.insert(payments).values({
+      playerId: createdPlayers[1].id,
+      matchId: upcomingMatch.id,
+      amount: "600.00",
+      purpose: "Match fee", 
+      status: "paid",
+      dueDate: new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000),
+      paidDate: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000),
+      paymentMethod: "upi"
+    });
 
     // Create sample invoice
     await db.insert(invoices).values({
@@ -425,21 +424,59 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getRecentMatches(teamId: number, limit = 10): Promise<Match[]> {
-    return await db.select().from(matches)
-      .where(eq(matches.homeTeamId, teamId))
-      .orderBy(desc(matches.date))
-      .limit(limit);
+  async getRecentMatches(teamId: number, limit = 10): Promise<any[]> {
+    const result = await db.select({
+      id: matches.id,
+      homeTeamId: matches.homeTeamId,
+      awayTeamId: matches.awayTeamId,
+      date: matches.date,
+      venue: matches.venue,
+      status: matches.status,
+      matchType: matches.matchType,
+      totalOvers: matches.totalOvers,
+      result: matches.result,
+      winnerTeamId: matches.winnerTeamId,
+      matchFee: matches.matchFee,
+      homeTeamName: teams.name,
+      awayTeamName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`,
+      opponentName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`
+    })
+    .from(matches)
+    .leftJoin(teams, eq(matches.homeTeamId, teams.id))
+    .where(eq(matches.homeTeamId, teamId))
+    .orderBy(desc(matches.date))
+    .limit(limit);
+    
+    return result;
   }
 
   async getLiveMatches(): Promise<Match[]> {
     return await db.select().from(matches).where(eq(matches.status, "live"));
   }
 
-  async getUpcomingMatches(teamId: number): Promise<Match[]> {
-    return await db.select().from(matches)
-      .where(and(eq(matches.homeTeamId, teamId), eq(matches.status, "scheduled")))
-      .orderBy(matches.date);
+  async getUpcomingMatches(teamId: number): Promise<any[]> {
+    const result = await db.select({
+      id: matches.id,
+      homeTeamId: matches.homeTeamId,
+      awayTeamId: matches.awayTeamId,
+      date: matches.date,
+      venue: matches.venue,
+      status: matches.status,
+      matchType: matches.matchType,
+      totalOvers: matches.totalOvers,
+      result: matches.result,
+      winnerTeamId: matches.winnerTeamId,
+      matchFee: matches.matchFee,
+      homeTeamName: teams.name,
+      awayTeamName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`,
+      opponentName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`
+    })
+    .from(matches)
+    .leftJoin(teams, eq(matches.homeTeamId, teams.id))
+    .where(and(eq(matches.homeTeamId, teamId), eq(matches.status, "scheduled")))
+    .orderBy(matches.date);
+    
+    return result;
   }
 
   // Innings
