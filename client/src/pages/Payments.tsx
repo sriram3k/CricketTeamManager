@@ -402,6 +402,7 @@ export default function Payments() {
             <TableHeader>
               <TableRow>
                 <TableHead>Player</TableHead>
+                <TableHead>Purpose</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Due Date</TableHead>
                 <TableHead>Status</TableHead>
@@ -427,6 +428,7 @@ export default function Payments() {
                     <TableCell className="font-medium">
                       {player?.name || 'Unknown Player'}
                     </TableCell>
+                    <TableCell>{paymentData.purpose || payment.purpose || 'Match fee'}</TableCell>
                     <TableCell>S${amount ? parseFloat(amount).toLocaleString() : '0'}</TableCell>
                     <TableCell>
                       {dueDate ? new Date(dueDate).toLocaleDateString() : 'N/A'}

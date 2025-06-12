@@ -106,11 +106,18 @@ export default function PlayerManagement() {
   });
 
   const updatePlayerMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("PUT", `/api/players/${data.id}`, data),
+    mutationFn: (data: any) => {
+      const playerData = {
+        ...data,
+        teams: selectedTeams.map(teamId => ({ teamId, position: data.preferredPosition }))
+      };
+      return apiRequest("PUT", `/api/players/${data.id}`, playerData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
       setIsDialogOpen(false);
       setEditingPlayer(null);
+      setSelectedTeams([]);
       form.reset();
       toast({
         title: "Success",
@@ -191,6 +198,9 @@ export default function PlayerManagement() {
 
   const openEditDialog = (player: any) => {
     setEditingPlayer(player);
+    // Set selected teams based on player's current team assignments
+    const playerTeamIds = player.teams?.map((t: any) => t.teamId) || [];
+    setSelectedTeams(playerTeamIds);
     form.reset({
       name: player.name,
       email: player.email || "",
@@ -457,7 +467,7 @@ export default function PlayerManagement() {
                 )}
               />
 
-              {!editingPlayer && userTeams.length > 0 && (
+              {userTeams.length > 0 && (
                 <div className="space-y-2">
                   <FormLabel>Assign to Teams</FormLabel>
                   <div className="space-y-2">

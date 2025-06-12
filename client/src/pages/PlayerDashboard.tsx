@@ -198,11 +198,21 @@ export default function PlayerDashboard() {
                     <div key={request.id} className="border rounded-lg p-4">
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h4 className="font-semibold">{request.title}</h4>
-                          <p className="text-sm text-gray-600">{request.description}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Deadline: {new Date(request.deadline).toLocaleDateString()}
+                          <h4 className="font-semibold">vs {request.opponent || 'Match'}</h4>
+                          <p className="text-sm text-gray-600">
+                            {request.matchDate ? new Date(request.matchDate).toLocaleDateString() : 'TBD'} at {request.venue || 'TBD'}
                           </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Deadline: {new Date(request.deadline).toLocaleDateString()} at {new Date(request.deadline).toLocaleTimeString()}
+                          </p>
+                          {request.message && (
+                            <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">{request.message}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={new Date(request.deadline) < new Date() ? "secondary" : "default"}>
+                            {new Date(request.deadline) < new Date() ? "Expired" : "Active"}
+                          </Badge>
                         </div>
                       </div>
                       
