@@ -65,8 +65,19 @@ export default function Availability() {
     },
   });
 
-  const handleViewDetails = (request: any) => {
+  const handleViewDetails = async (request: any) => {
     setSelectedRequest(request);
+    
+    // Fetch detailed responses for this specific request
+    try {
+      const responses = await queryClient.fetchQuery({
+        queryKey: [`/api/availability-requests/${request.id}/responses`],
+      });
+      setSelectedRequest({ ...request, responses });
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    }
+    
     setIsDetailsDialogOpen(true);
   };
 
@@ -408,7 +419,7 @@ export default function Availability() {
               <div>
                 <h3 className="font-medium mb-3">Player Responses</h3>
                 <div className="space-y-2">
-                  {getRequestResponses(selectedRequest.id).map((response: any) => {
+                  {(selectedRequest.responses || []).map((response: any) => {
                     const player = players?.find((p: any) => p.id === response.playerId);
                     return (
                       <div key={response.id} className="flex items-center justify-between p-3 border rounded-md">
@@ -417,6 +428,9 @@ export default function Availability() {
                           <p className="text-sm text-muted-foreground">
                             Responded on {new Date(response.responseDate).toLocaleDateString()}
                           </p>
+                          {response.message && (
+                            <p className="text-sm text-muted-foreground mt-1">{response.message}</p>
+                          )}
                         </div>
                         <Badge 
                           variant={
@@ -431,7 +445,7 @@ export default function Availability() {
                     );
                   })}
                   
-                  {getRequestResponses(selectedRequest.id).length === 0 && (
+                  {(!selectedRequest.responses || selectedRequest.responses.length === 0) && (
                     <div className="text-center py-8">
                       <p className="text-muted-foreground">No responses yet</p>
                     </div>

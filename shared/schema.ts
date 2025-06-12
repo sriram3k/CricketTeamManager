@@ -178,6 +178,7 @@ export const payments = pgTable("payments", {
   playerId: integer("player_id").notNull(),
   matchId: integer("match_id").notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  purpose: text("purpose").notNull(), // Match fee, Equipment, Travel, etc.
   status: text("status").notNull().default("pending"), // pending, paid, overdue
   dueDate: timestamp("due_date").notNull(),
   paidDate: timestamp("paid_date"),
@@ -243,6 +244,7 @@ export const insertPaymentSchema = z.object({
   playerId: z.number(),
   matchId: z.number(),
   amount: z.string(),
+  purpose: z.string().min(1, "Purpose is required"),
   status: z.string().default("pending"),
   dueDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val),
   paidDate: z.union([z.string(), z.date()]).transform((val) => typeof val === 'string' ? new Date(val) : val).optional(),
