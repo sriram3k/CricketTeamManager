@@ -59,16 +59,22 @@ export default function Payments() {
   });
 
   const createPaymentMutation = useMutation({
-    mutationFn: (data: any) => apiRequest("POST", "/api/payments", data),
-    onSuccess: () => {
+    mutationFn: (data: any) => {
+      console.log("Making API request with data:", JSON.stringify(data, null, 2));
+      return apiRequest("POST", "/api/payments", data);
+    },
+    onSuccess: (response) => {
+      console.log("Payment created successfully:", response);
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/payments/pending`] });
       setIsDialogOpen(false);
       form.reset();
     },
     onError: (error: any) => {
-      console.error("Payment creation error:", error);
-      // Show error message to user
-      alert(`Error creating payment: ${error.message || 'Unknown error'}`);
+      console.error("Payment creation error details:", error);
+      console.error("Error stack:", error.stack);
+      // Show detailed error message to user
+      const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+      alert(`Error creating payment: ${errorMessage}`);
     },
   });
 
