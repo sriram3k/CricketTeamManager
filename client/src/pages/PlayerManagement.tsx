@@ -168,7 +168,13 @@ export default function PlayerManagement() {
       setIsInviteDialogOpen(false);
       inviteForm.reset();
       
-      if (response.warning) {
+      if (response.emailDelivered) {
+        // Email sent successfully
+        toast({
+          title: "Success",
+          description: "Player invitation email sent successfully",
+        });
+      } else {
         // Email failed but invitation was created
         toast({
           title: "Invitation Created",
@@ -176,24 +182,33 @@ export default function PlayerManagement() {
           variant: "default",
         });
         
-        // Show invitation URL for manual sharing
-        setTimeout(() => {
+        // Copy invitation URL to clipboard and show toast
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(response.invite.inviteUrl).then(() => {
+            toast({
+              title: "Link Copied",
+              description: "Invitation link copied to clipboard. Share it with the player.",
+              variant: "default",
+            });
+          }).catch(() => {
+            // Fallback: show the URL in a toast for manual copying
+            toast({
+              title: "Invitation Link",
+              description: `Copy this link: ${response.invite.inviteUrl}`,
+              variant: "default",
+            });
+          });
+        } else {
+          // Fallback for browsers without clipboard API
           toast({
             title: "Invitation Link",
-            description: `Copy this link to share manually: ${response.invite.inviteUrl}`,
+            description: `Copy this link: ${response.invite.inviteUrl}`,
             variant: "default",
           });
-        }, 2000);
+        }
         
         // Also log to console for easy copying
         console.log("Invitation URL for manual sharing:", response.invite.inviteUrl);
-        
-      } else {
-        // Email sent successfully
-        toast({
-          title: "Success",
-          description: "Player invitation email sent successfully",
-        });
       }
     },
     onError: (error: any) => {

@@ -84,39 +84,48 @@ export function registerInviteRoutes(app: Express) {
         : `${req.protocol}://${req.hostname}:${process.env.PORT || 5000}`;
       const inviteUrl = `${baseUrl}/invite/${token}`;
 
-      // Send email invitation
-      const emailSent = await sendPlayerInviteEmail({
-        to: validatedData.email,
-        inviterName: validatedData.inviterName,
-        teamName: validatedData.teamName,
-        position: validatedData.position,
-        message: validatedData.message,
-        inviteUrl,
-      });
+      // Always create the invitation first, then attempt email
+      let emailSent = false;
+      let emailError = null;
+
+      try {
+        emailSent = await sendPlayerInviteEmail({
+          to: validatedData.email,
+          inviterName: validatedData.inviterName,
+          teamName: validatedData.teamName,
+          position: validatedData.position,
+          message: validatedData.message,
+          inviteUrl,
+        });
+      } catch (error) {
+        emailError = error.message;
+        console.error("Email sending failed:", error);
+      }
+
+      // Always return success with invitation details
+      const response = {
+        invite: {
+          id: invite.id,
+          email: invite.email,
+          teamName: invite.teamName,
+          status: invite.status,
+          inviteUrl: inviteUrl
+        }
+      };
 
       if (emailSent) {
         res.status(201).json({
+          ...response,
           message: "Invitation email sent successfully",
-          invite: {
-            id: invite.id,
-            email: invite.email,
-            teamName: invite.teamName,
-            status: invite.status,
-            inviteUrl: inviteUrl
-          }
+          emailDelivered: true
         });
       } else {
-        // Even if email fails, provide the invitation link for manual sharing
         res.status(201).json({
+          ...response,
           message: "Invitation created successfully. Email delivery failed - please share this link manually.",
-          invite: {
-            id: invite.id,
-            email: invite.email,
-            teamName: invite.teamName,
-            status: invite.status,
-            inviteUrl: inviteUrl
-          },
-          warning: "Email not sent - you can copy and share the invitation link manually"
+          warning: "Email not sent - you can copy and share the invitation link manually",
+          emailDelivered: false,
+          emailError
         });
       }
     } catch (error) {
