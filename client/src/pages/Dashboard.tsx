@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 
 const matchFormSchema = z.object({
-  homeTeamId: z.number(),
+  homeTeamId: z.number().min(1, "Please select a team"),
   date: z.string().min(1, "Date is required"),
   venue: z.string().min(1, "Venue is required"),
   opponent: z.string().min(1, "Opponent team is required"),
@@ -88,7 +88,7 @@ export default function Dashboard() {
   const matchForm = useForm({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
-      homeTeamId: teamId,
+      homeTeamId: 0, // Will be selected from dropdown
       date: "",
       venue: "",
       status: "scheduled",
@@ -115,11 +115,23 @@ export default function Dashboard() {
 
   const createMatchMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/matches", data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+    onSuccess: (_, variables) => {
+      // Invalidate queries for the selected team
+      const selectedTeamId = variables.homeTeamId;
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/upcoming`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/recent`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/dashboard`] });
       setIsScheduleDialogOpen(false);
-      matchForm.reset();
+      matchForm.reset({
+        homeTeamId: 0,
+        date: "",
+        venue: "",
+        status: "scheduled",
+        matchType: "T20",
+        totalOvers: 20,
+        matchFee: "",
+        opponent: "",
+      });
       alert("Match scheduled successfully!");
     },
     onError: (error: any) => {
@@ -132,11 +144,23 @@ export default function Dashboard() {
   const updateMatchMutation = useMutation({
     mutationFn: (data: { id: number; updates: any }) => 
       apiRequest("PUT", `/api/matches/${data.id}`, data.updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
+    onSuccess: (_, variables) => {
+      // Invalidate queries for the updated team
+      const selectedTeamId = variables.updates.homeTeamId;
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/upcoming`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/recent`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/dashboard`] });
       setEditingMatch(null);
-      matchForm.reset();
+      matchForm.reset({
+        homeTeamId: 0,
+        date: "",
+        venue: "",
+        status: "scheduled",
+        matchType: "T20",
+        totalOvers: 20,
+        matchFee: "",
+        opponent: "",
+      });
       alert("Match updated successfully!");
     },
     onError: (error: any) => {
@@ -165,7 +189,7 @@ export default function Dashboard() {
 
   const onMatchSubmit = (data: any) => {
     const matchData = {
-      homeTeamId: teamId,
+      homeTeamId: data.homeTeamId,
       // Don't set awayTeamId when using free text opponent names
       opponentName: data.opponent,
       date: data.date,
@@ -570,6 +594,31 @@ export default function Dashboard() {
           </DialogHeader>
           <Form {...matchForm}>
             <form onSubmit={matchForm.handleSubmit(onMatchSubmit)} className="space-y-4">
+              <FormField
+                control={matchForm.control}
+                name="homeTeamId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Your Team</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your team" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {allTeams?.map((team: any) => (
+                          <SelectItem key={team.id} value={team.id.toString()}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <FormField
                 control={matchForm.control}
                 name="opponent"
