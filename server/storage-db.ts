@@ -456,6 +456,7 @@ export class DatabaseStorage implements IStorage {
       id: matches.id,
       homeTeamId: matches.homeTeamId,
       awayTeamId: matches.awayTeamId,
+      opponentName: matches.opponentName,
       date: matches.date,
       venue: matches.venue,
       status: matches.status,
@@ -465,8 +466,7 @@ export class DatabaseStorage implements IStorage {
       winnerTeamId: matches.winnerTeamId,
       matchFee: matches.matchFee,
       homeTeamName: teams.name,
-      awayTeamName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`,
-      opponentName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`
+      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END)`
     })
     .from(matches)
     .leftJoin(teams, eq(matches.homeTeamId, teams.id))
@@ -486,6 +486,7 @@ export class DatabaseStorage implements IStorage {
       id: matches.id,
       homeTeamId: matches.homeTeamId,
       awayTeamId: matches.awayTeamId,
+      opponentName: matches.opponentName,
       date: matches.date,
       venue: matches.venue,
       status: matches.status,
@@ -495,8 +496,7 @@ export class DatabaseStorage implements IStorage {
       winnerTeamId: matches.winnerTeamId,
       matchFee: matches.matchFee,
       homeTeamName: teams.name,
-      awayTeamName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`,
-      opponentName: sql<string>`CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END`
+      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END)`
     })
     .from(matches)
     .leftJoin(teams, eq(matches.homeTeamId, teams.id))
