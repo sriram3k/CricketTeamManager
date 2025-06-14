@@ -99,32 +99,123 @@ export default function BallByBallEntry({ inningsId, balls, onBallAdded }: BallB
   const latestBalls = balls.slice(-6).reverse();
 
   return (
-    <div className="space-y-6">
-      {/* Current Over Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Ball by Ball Entry</span>
-            <Badge variant="outline">
+    <div className="space-y-4">
+      {/* Current Over Display */}
+      <Card className="bg-gradient-to-r from-blue-500 to-green-500 text-white border-0">
+        <CardContent className="p-4">
+          <div className="text-center">
+            <div className="text-3xl font-bold mb-1">
               Over {currentOver}.{currentBall}
-            </Badge>
-          </CardTitle>
+            </div>
+            <p className="text-blue-100 text-sm">Current Ball</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Score Entry */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Score This Ball</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {/* Players Selection */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Large Score Buttons */}
+              <div className="space-y-3">
+                <FormLabel className="text-base font-semibold">Runs Scored</FormLabel>
+                <div className="grid grid-cols-3 gap-3">
+                  {quickScoreButtons.map((runs) => (
+                    <Button
+                      key={runs}
+                      type="button"
+                      variant={form.watch('runs') === runs ? "default" : "outline"}
+                      onClick={() => setQuickScore(runs)}
+                      className={`h-16 text-xl font-bold transition-all ${
+                        form.watch('runs') === runs 
+                          ? 'bg-green-600 hover:bg-green-700 text-white scale-105' 
+                          : 'hover:scale-105'
+                      } ${
+                        runs === 4 ? 'border-blue-300 hover:border-blue-500' :
+                        runs === 6 ? 'border-green-300 hover:border-green-500' :
+                        'border-gray-300'
+                      }`}
+                    >
+                      {runs}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Wicket Toggle */}
+              <div className="border rounded-lg p-4 bg-red-50 dark:bg-red-950/20">
+                <FormField
+                  control={form.control}
+                  name="isWicket"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between space-y-0">
+                      <div>
+                        <FormLabel className="text-base font-semibold text-red-700 dark:text-red-400">
+                          Wicket
+                        </FormLabel>
+                        <p className="text-sm text-red-600 dark:text-red-500">
+                          Check if this ball resulted in a wicket
+                        </p>
+                      </div>
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          className="h-6 w-6"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch('isWicket') && (
+                  <div className="mt-4">
+                    <FormField
+                      control={form.control}
+                      name="wicketType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Dismissal Type</FormLabel>
+                          <Select onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white dark:bg-slate-900">
+                                <SelectValue placeholder="How was the batsman dismissed?" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {wicketTypes.map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {type.replace('_', ' ').split(' ').map(word => 
+                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                  ).join(' ')}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Players */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="batsmanId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Batsman</FormLabel>
+                      <FormLabel>Striker</FormLabel>
                       <Select onValueChange={(value) => field.onChange(parseInt(value))}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select batsman" />
+                            <SelectValue placeholder="Batsman" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -147,7 +238,7 @@ export default function BallByBallEntry({ inningsId, balls, onBallAdded }: BallB
                       <Select onValueChange={(value) => field.onChange(parseInt(value))}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select bowler" />
+                            <SelectValue placeholder="Bowler" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -162,80 +253,17 @@ export default function BallByBallEntry({ inningsId, balls, onBallAdded }: BallB
                 />
               </div>
 
-              {/* Quick Score Buttons */}
-              <div>
-                <FormLabel>Runs Scored</FormLabel>
-                <div className="flex space-x-2 mt-2">
-                  {quickScoreButtons.map((runs) => (
-                    <Button
-                      key={runs}
-                      type="button"
-                      variant={form.watch('runs') === runs ? "default" : "outline"}
-                      onClick={() => setQuickScore(runs)}
-                      className="w-12 h-12"
-                    >
-                      {runs}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Wicket Information */}
-              <FormField
-                control={form.control}
-                name="isWicket"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Wicket</FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch('isWicket') && (
-                <FormField
-                  control={form.control}
-                  name="wicketType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>How Out</FormLabel>
-                      <Select onValueChange={field.onChange}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select wicket type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {wicketTypes.map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type.replace('_', ' ').toUpperCase()}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
               {/* Commentary */}
               <FormField
                 control={form.control}
                 name="commentary"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Commentary (Optional)</FormLabel>
+                    <FormLabel>Ball Commentary</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Describe the ball..."
+                        placeholder="Describe what happened on this ball..."
+                        rows={3}
                         {...field}
                       />
                     </FormControl>
@@ -244,57 +272,63 @@ export default function BallByBallEntry({ inningsId, balls, onBallAdded }: BallB
                 )}
               />
 
+              {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full h-14 text-lg font-semibold bg-green-600 hover:bg-green-700"
                 disabled={addBallMutation.isPending}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Ball
+                {addBallMutation.isPending ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Adding Ball...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5 mr-2" />
+                    Record Ball
+                  </>
+                )}
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
 
-      {/* Recent Balls */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Balls</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {latestBalls.length > 0 ? (
-            <div className="space-y-2">
-              {latestBalls.map((ball: any, index: number) => (
-                <div key={ball.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="outline">
-                      {ball.overNumber}.{ball.ballNumber}
-                    </Badge>
-                    <span className="font-medium">
-                      {ball.runs} run{ball.runs !== 1 ? 's' : ''}
-                    </span>
-                    {ball.isWicket && (
-                      <Badge variant="destructive">WICKET</Badge>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-muted-foreground">
-                      {ball.commentary || 'No commentary'}
-                    </p>
-                  </div>
+      {/* Current Over Progress */}
+      {latestBalls.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">This Over</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {latestBalls.slice(-6).map((ball: any, index) => (
+                <div
+                  key={ball.id || index}
+                  className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold border-2 ${
+                    ball.isWicket 
+                      ? 'bg-red-500 border-red-600 text-white' 
+                      : ball.runs === 4 
+                      ? 'bg-blue-500 border-blue-600 text-white'
+                      : ball.runs === 6
+                      ? 'bg-green-500 border-green-600 text-white'
+                      : 'bg-gray-200 border-gray-300 text-gray-800 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200'
+                  }`}
+                >
+                  {ball.isWicket ? 'W' : ball.runs}
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground">No Balls Yet</h3>
-              <p className="text-muted-foreground">Start adding balls to see the history</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {latestBalls.length === 0 && (
+              <div className="text-center py-6">
+                <Target className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">No balls recorded yet</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

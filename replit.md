@@ -129,6 +129,7 @@ The system uses a comprehensive PostgreSQL schema with the following key entitie
 
 Changelog:
 - June 14, 2025. Initial setup
+- June 14, 2025. Redesigned Live Scoring interface to match CricHQ-style mobile-first design with prominent score display, touch-friendly controls, and visual ball tracking
 
 ## User Preferences
 
