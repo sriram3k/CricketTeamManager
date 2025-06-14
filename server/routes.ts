@@ -534,6 +534,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const matchData = insertMatchSchema.parse(req.body);
       const match = await storage.createMatch(matchData);
+      
+      // Automatically create an availability request for the new match
+      try {
+        const deadline = new Date(match.date);
+        deadline.setDate(deadline.getDate() - 2); // Deadline 2 days before match
+        
+        await storage.createAvailabilityRequest({
+          teamId: match.homeTeamId,
+          matchId: match.id,
+          requestDate: new Date(),
+          matchDate: match.date,
+          venue: match.venue,
+          opponent: match.opponentName || 'TBD',
+          deadline: deadline,
+          message: `Please confirm your availability for the ${match.matchType} match against ${match.opponentName || 'TBD'} at ${match.venue}.`
+        });
+      } catch (availabilityError) {
+        console.error("Failed to create availability request:", availabilityError);
+        // Don't fail the match creation if availability request fails
+      }
+      
       res.status(201).json(match);
     } catch (error) {
       res.status(400).json({ message: "Invalid match data", error });
@@ -550,6 +571,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const match = await storage.updateMatch(parseInt(req.params.id), updates);
       if (!match) return res.status(404).json({ message: "Match not found" });
+      
+      // Update or create availability request for the updated match
+      try {
+        const existingRequests = await storage.getAvailabilityRequestsByTeam(match.homeTeamId);
+        const matchRequest = existingRequests.find(req => req.matchId === match.id);
+        
+        if (matchRequest) {
+          // Update existing availability request if match details changed
+          const deadline = new Date(match.date);
+          deadline.setDate(deadline.getDate() - 2);
+          
+          // Note: We would need an updateAvailabilityRequest method for this
+          // For now, we'll just ensure future matches have requests
+        } else if (match.status === 'scheduled') {
+          // Create new availability request if none exists and match is scheduled
+          const deadline = new Date(match.date);
+          deadline.setDate(deadline.getDate() - 2);
+          
+          await storage.createAvailabilityRequest({
+            teamId: match.homeTeamId,
+            matchId: match.id,
+            requestDate: new Date(),
+            matchDate: match.date,
+            venue: match.venue,
+            opponent: match.opponentName || 'TBD',
+            deadline: deadline,
+            message: `Please confirm your availability for the ${match.matchType} match against ${match.opponentName || 'TBD'} at ${match.venue}.`
+          });
+        }
+      } catch (availabilityError) {
+        console.error("Failed to update availability request:", availabilityError);
+      }
+      
       res.json(match);
     } catch (error) {
       res.status(400).json({ message: "Invalid match update data", error });
