@@ -54,8 +54,8 @@ export default function Dashboard() {
   // Helper function to get team names for matches
   const getMatchTitle = (match: any, teams: any[]) => {
     const homeTeam = teams.find(t => t.id === match.homeTeamId);
-    // Use opponentName as free text field - no database lookups
-    const opponentName = match.opponentName || 'Away Team';
+    // Use opponentName first, fallback to awayTeamName if opponentName is not set
+    const opponentName = match.opponentName || match.awayTeamName || 'Away Team';
     return `${homeTeam?.name || 'Home Team'} vs ${opponentName}`;
   };
   

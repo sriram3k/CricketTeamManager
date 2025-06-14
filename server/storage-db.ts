@@ -572,7 +572,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailabilityRequestsByTeam(teamId: number): Promise<AvailabilityRequest[]> {
-    return await db.select().from(availabilityRequests).where(eq(availabilityRequests.teamId, teamId));
+    const result = await db.select({
+      id: availabilityRequests.id,
+      teamId: availabilityRequests.teamId,
+      matchId: availabilityRequests.matchId,
+      requestDate: availabilityRequests.requestDate,
+      matchDate: availabilityRequests.matchDate,
+      venue: availabilityRequests.venue,
+      opponent: sql<string>`COALESCE(${matches.opponentName}, ${availabilityRequests.opponent})`,
+      deadline: availabilityRequests.deadline,
+      message: availabilityRequests.message,
+    })
+    .from(availabilityRequests)
+    .leftJoin(matches, eq(availabilityRequests.matchId, matches.id))
+    .where(eq(availabilityRequests.teamId, teamId))
+    .orderBy(desc(availabilityRequests.requestDate));
+    
+    return result as any[];
   }
 
   async createAvailabilityRequest(insertRequest: InsertAvailabilityRequest): Promise<AvailabilityRequest> {
