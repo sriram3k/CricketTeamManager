@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           requestDate: new Date(),
           matchDate: match.date,
           venue: match.venue,
-          opponent: match.opponentName || 'TBD',
+          opponent: (match.opponentName || 'TBD') as string,
           deadline: deadline,
           message: `Please confirm your availability for the ${match.matchType} match against ${match.opponentName || 'TBD'} at ${match.venue}.`
         });
@@ -595,7 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             requestDate: new Date(),
             matchDate: match.date,
             venue: match.venue,
-            opponent: match.opponentName || 'TBD',
+            opponent: (match.opponentName || 'TBD') as string,
             deadline: deadline,
             message: `Please confirm your availability for the ${match.matchType} match against ${match.opponentName || 'TBD'} at ${match.venue}.`
           });
@@ -714,6 +714,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(request);
     } catch (error) {
       res.status(400).json({ message: "Invalid availability request data", error });
+    }
+  });
+
+  // Backfill availability requests for existing scheduled matches
+  app.post("/api/teams/:teamId/backfill-availability", async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const matches = await storage.getUpcomingMatches(teamId);
+      const existingRequests = await storage.getAvailabilityRequestsByTeam(teamId);
+      
+      let created = 0;
+      
+      for (const match of matches) {
+        // Check if availability request already exists for this match
+        const hasRequest = existingRequests.some(req => req.matchId === match.id);
+        
+        if (!hasRequest && match.status === 'scheduled') {
+          const deadline = new Date(match.date);
+          deadline.setDate(deadline.getDate() - 2);
+          
+          await storage.createAvailabilityRequest({
+            teamId: match.homeTeamId,
+            matchId: match.id,
+            requestDate: new Date(),
+            matchDate: match.date,
+            venue: match.venue,
+            opponent: (match.opponentName || 'TBD') as string,
+            deadline: deadline,
+            message: `Please confirm your availability for the ${match.matchType} match against ${match.opponentName || 'TBD'} at ${match.venue}.`
+          });
+          created++;
+        }
+      }
+      
+      res.json({ message: `Created ${created} availability requests for existing matches` });
+    } catch (error) {
+      console.error("Backfill availability requests error:", error);
+      res.status(500).json({ message: "Failed to backfill availability requests" });
     }
   });
 
