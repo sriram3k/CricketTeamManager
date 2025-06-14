@@ -164,18 +164,42 @@ export default function PlayerManagement() {
       };
       return apiRequest("POST", "/api/invites/send", inviteData);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       setIsInviteDialogOpen(false);
       inviteForm.reset();
-      toast({
-        title: "Success",
-        description: "Player invitation sent successfully",
-      });
+      
+      if (response.warning) {
+        // Email failed but invitation was created
+        toast({
+          title: "Invitation Created",
+          description: response.message,
+          variant: "default",
+        });
+        
+        // Show invitation URL for manual sharing
+        setTimeout(() => {
+          toast({
+            title: "Invitation Link",
+            description: `Copy this link to share manually: ${response.invite.inviteUrl}`,
+            variant: "default",
+          });
+        }, 2000);
+        
+        // Also log to console for easy copying
+        console.log("Invitation URL for manual sharing:", response.invite.inviteUrl);
+        
+      } else {
+        // Email sent successfully
+        toast({
+          title: "Success",
+          description: "Player invitation email sent successfully",
+        });
+      }
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to send invitation",
+        description: error.message || "Failed to create invitation",
         variant: "destructive",
       });
     },

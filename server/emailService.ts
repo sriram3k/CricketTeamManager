@@ -89,18 +89,29 @@ export async function sendPlayerInviteEmail(params: InviteEmailParams): Promise<
   `;
 
   try {
+    // Use a verified sender email for SendGrid
+    const fromEmail = process.env.FROM_EMAIL || 'test@example.com';
+    
     await sgMail.send({
       to,
-      from: process.env.FROM_EMAIL || 'noreply@crickiq.com',
-      subject: `🏏 Join ${teamName} on CrickIQ - Team Invitation`,
+      from: {
+        email: fromEmail,
+        name: 'CrickIQ Team Management'
+      },
+      subject: `Join ${teamName} on CrickIQ - Team Invitation`,
       text: textContent,
       html: htmlContent,
     });
     
-    console.log(`Invite email sent to ${to} for team ${teamName}`);
+    console.log(`Invite email sent successfully to ${to} for team ${teamName}`);
     return true;
-  } catch (error) {
-    console.error('Error sending invite email:', error);
+  } catch (error: any) {
+    console.error('SendGrid email error details:', error);
+    
+    // If SendGrid fails, log the invitation details for manual follow-up
+    console.log(`Email invitation failed for ${to}. Invitation URL: ${inviteUrl}`);
+    
+    // Return false to indicate email sending failed
     return false;
   }
 }
