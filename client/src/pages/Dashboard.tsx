@@ -77,6 +77,7 @@ export default function Dashboard() {
 
   const { data: allTeams = [] } = useQuery({
     queryKey: ['/api/teams'],
+    select: (data) => Array.isArray(data) ? data : [],
   });
 
   // Get team data for display
@@ -607,7 +608,7 @@ export default function Dashboard() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {allTeams?.map((team: any) => (
+                        {allTeams.map((team: any) => (
                           <SelectItem key={team.id} value={team.id.toString()}>
                             {team.name}
                           </SelectItem>
