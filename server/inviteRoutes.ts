@@ -42,12 +42,12 @@ export function registerInviteRoutes(app: Express) {
         message: testResult ? "Test email sent successfully" : "Test email failed",
         configured: true
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Email test error:", error);
       res.status(500).json({
         success: false,
         message: "Email test failed",
-        error: error.message
+        error: error?.message || "Unknown error"
       });
     }
   });
@@ -97,8 +97,8 @@ export function registerInviteRoutes(app: Express) {
           message: validatedData.message,
           inviteUrl,
         });
-      } catch (error) {
-        emailError = error.message;
+      } catch (error: any) {
+        emailError = error?.message || "Unknown email error";
         console.error("Email sending failed:", error);
       }
 
