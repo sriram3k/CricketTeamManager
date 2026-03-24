@@ -2,12 +2,19 @@ services:
   - type: web
     name: cricketteammanager
     runtime: node
-    buildCommand: npm install && npm run build && npm run db:push
-    startCommand: npm run start
+    buildCommand: npm install && npm run build
+    startCommand: npm run db:push && npm run start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false   # Set manually in Render dashboard from Neon.tech
+        fromDatabase:
+          name: cricketteammanager-db
+          property: connectionString
       - key: SESSION_SECRET
         generateValue: true
+
+databases:
+  - name: cricketteammanager-db
+    databaseName: cricketteammanager
+    plan: free
