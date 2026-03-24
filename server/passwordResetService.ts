@@ -1,12 +1,10 @@
 import { MailService } from '@sendgrid/mail';
 import crypto from 'crypto';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
-}
-
 const mailService = new MailService();
-mailService.setApiKey(process.env.SENDGRID_API_KEY);
+if (process.env.SENDGRID_API_KEY) {
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 interface PasswordResetEmailParams {
   to: string;
@@ -15,10 +13,14 @@ interface PasswordResetEmailParams {
 }
 
 export async function sendPasswordResetEmail(params: PasswordResetEmailParams): Promise<boolean> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('SENDGRID_API_KEY not configured - password reset email not sent');
+    return false;
+  }
+
   try {
-    const resetUrl = process.env.NODE_ENV === 'production' 
-      ? `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/reset-password?token=${params.resetToken}`
-      : `http://localhost:5000/reset-password?token=${params.resetToken}`;
+    const baseUrl = process.env.APP_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000');
+    const resetUrl = `${baseUrl}/reset-password?token=${params.resetToken}`;
 
     const emailContent = {
       to: params.to,
