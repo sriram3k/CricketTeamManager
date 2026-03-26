@@ -20,8 +20,7 @@ export default function TopBar() {
       // Redirect to login page
       window.location.href = "/";
     } catch (error) {
-      // If local logout fails, try Replit logout
-      window.location.href = "/api/logout";
+      window.location.href = "/login";
     }
   };
 

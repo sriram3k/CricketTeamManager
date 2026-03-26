@@ -41,13 +41,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Then check for Replit Auth
-      if (req.isAuthenticated() && req.user?.claims?.sub) {
-        const userId = req.user.claims.sub;
-        const user = await storage.getUser(userId);
-        return res.json(user);
-      }
-
       // No valid session found
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
@@ -863,8 +856,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/payments", async (req: any, res) => {
     try {
-      // Check authentication - either Replit auth or local session
-      if (!req.isAuthenticated() && !req.session?.localUser) {
+      // Check authentication
+      if (!req.session?.localUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -69,10 +68,6 @@ export default function Signup() {
     signupMutation.mutate(signupData);
   };
 
-  const handleReplitLogin = () => {
-    window.location.href = "/api/login";
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
       <Card className="w-full max-w-md">
@@ -90,27 +85,6 @@ export default function Signup() {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Replit Auth Login */}
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleReplitLogin}
-          >
-            Continue with Replit
-          </Button>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or create account with email
-              </span>
-            </div>
-          </div>
-
           {/* Email/Password Signup Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
