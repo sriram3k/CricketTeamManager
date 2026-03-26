@@ -9,6 +9,7 @@ services:
       deploy_on_push: true
     build_command: npm install && npm run build
     run_command: sh scripts/start.sh
+    http_port: 8080
     instance_size_slug: basic-xs
     instance_count: 1
     envs:
