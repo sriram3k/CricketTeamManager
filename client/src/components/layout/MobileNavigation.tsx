@@ -2,18 +2,16 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
-  Target,
   Users,
+  CalendarCheck,
   CreditCard,
-  TrendingUp
 } from "lucide-react";
 
 const mobileNavigation = [
   { name: "Overview", href: "/", icon: BarChart3 },
-  { name: "Live", href: "/live-scoring", icon: Target },
   { name: "Squad", href: "/player-management", icon: Users },
-  { name: "Fees", href: "/payments", icon: CreditCard },
-  { name: "Stats", href: "/analytics", icon: TrendingUp },
+  { name: "Availability", href: "/availability", icon: CalendarCheck },
+  { name: "Payments", href: "/payments", icon: CreditCard },
 ];
 
 export default function MobileNavigation() {
@@ -21,7 +19,7 @@ export default function MobileNavigation() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border lg:hidden z-50">
-      <div className="grid grid-cols-5 py-2">
+      <div className="grid grid-cols-4 py-2">
         {mobileNavigation.map((item) => {
           const isActive = location === item.href;
           const Icon = item.icon;

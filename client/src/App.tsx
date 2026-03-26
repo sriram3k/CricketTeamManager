@@ -8,13 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import PlayerDashboard from "@/pages/PlayerDashboard";
-import LiveScoring from "@/pages/LiveScoring";
 import PlayerManagement from "@/pages/PlayerManagement";
 import TeamManagement from "@/pages/TeamManagement";
 import Availability from "@/pages/Availability";
 import Payments from "@/pages/Payments";
 import Invoices from "@/pages/Invoices";
-import Analytics from "@/pages/Analytics";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -74,13 +72,11 @@ function Router() {
           // Manager routes - full access
           <>
             <Route path="/" component={Dashboard} />
-            <Route path="/live-scoring" component={LiveScoring} />
             <Route path="/team-management" component={TeamManagement} />
             <Route path="/player-management" component={PlayerManagement} />
             <Route path="/availability" component={Availability} />
             <Route path="/payments" component={Payments} />
             <Route path="/invoices" component={Invoices} />
-            <Route path="/analytics" component={Analytics} />
             <Route component={NotFound} />
           </>
         )}

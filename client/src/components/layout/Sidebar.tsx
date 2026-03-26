@@ -1,82 +1,62 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Trophy,
-  Target,
   Users,
   CalendarCheck,
   CreditCard,
   FileText,
-  TrendingUp,
-  BarChart3,
-  Zap
+  BarChart3
 } from "lucide-react";
 
 const navigation = [
-  { 
-    name: "Dashboard", 
+  {
+    name: "Dashboard",
     description: "Team overview & quick actions",
-    href: "/", 
-    icon: BarChart3, 
+    href: "/",
+    icon: BarChart3,
     dataTour: "dashboard",
     roles: ["manager", "player"]
   },
-  { 
-    name: "Live Scoring", 
-    description: "Track match progress in real-time",
-    href: "/live-scoring", 
-    icon: Target, 
-    dataTour: "live-scoring",
-    roles: ["manager"]
-  },
-  { 
-    name: "Team Management", 
+  {
+    name: "Team Management",
     description: "Create & manage your teams",
-    href: "/team-management", 
-    icon: Trophy, 
+    href: "/team-management",
+    icon: Trophy,
     dataTour: "teams",
     roles: ["manager"]
   },
-  { 
-    name: "Player Management", 
+  {
+    name: "Player Management",
     description: "Team roster & player details",
-    href: "/player-management", 
-    icon: Users, 
+    href: "/player-management",
+    icon: Users,
     dataTour: "players",
     roles: ["manager"]
   },
-  { 
-    name: "Availability", 
+  {
+    name: "Availability",
     description: "Player availability for matches",
-    href: "/availability", 
-    icon: CalendarCheck, 
+    href: "/availability",
+    icon: CalendarCheck,
     dataTour: "availability",
     roles: ["manager", "player"]
   },
-  { 
-    name: "Payments", 
+  {
+    name: "Payments",
     description: "Match fees & player payments",
-    href: "/payments", 
-    icon: CreditCard, 
+    href: "/payments",
+    icon: CreditCard,
     dataTour: "payments",
     roles: ["manager", "player"]
   },
-  { 
-    name: "Invoices", 
+  {
+    name: "Invoices",
     description: "Corporate billing & invoices",
-    href: "/invoices", 
-    icon: FileText, 
+    href: "/invoices",
+    icon: FileText,
     dataTour: "invoices",
-    roles: ["manager"]
-  },
-  { 
-    name: "Analytics", 
-    description: "Performance insights & statistics",
-    href: "/analytics", 
-    icon: TrendingUp, 
-    dataTour: "analytics",
     roles: ["manager"]
   },
 ];
@@ -84,16 +64,9 @@ const navigation = [
 export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
-  const teamId = 1;
 
-  const { data: team } = useQuery({
-    queryKey: [`/api/teams/${teamId}`],
-    queryFn: () => fetch(`/api/teams/${teamId}`).then(res => res.json()),
-  });
-
-  // Filter navigation items based on user role
-  const filteredNavigation = navigation.filter(item => 
-    item.roles.includes(user?.role || 'player')
+  const filteredNavigation = navigation.filter(item =>
+    item.roles.includes((user as any)?.role || 'player')
   );
 
   return (
@@ -146,7 +119,7 @@ export default function Sidebar() {
             </div>
             <div className="ml-3">
               <p className="text-sm font-medium text-foreground">Team Manager</p>
-              <p className="text-xs text-muted-foreground">{team?.name || 'Loading...'}</p>
+              <p className="text-xs text-muted-foreground">{(user as any)?.username || ''}</p>
             </div>
           </div>
         </div>

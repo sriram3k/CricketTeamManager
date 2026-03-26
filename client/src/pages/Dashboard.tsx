@@ -21,15 +21,11 @@ import {
   Users,
   Calendar,
   DollarSign,
-  Target,
-  BarChart3,
-  Play,
   Clock,
   CheckCircle,
   CalendarCheck,
   ArrowRight,
   Bell,
-  TrendingUp,
   Edit,
   Trash2,
   MoreHorizontal
@@ -48,7 +44,6 @@ const matchFormSchema = z.object({
 
 export default function Dashboard() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
-  const [isQuickScoreDialogOpen, setIsQuickScoreDialogOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<any>(null);
   const { user } = useAuth();
   const teamId = (user as any)?.teamId || 0;
@@ -298,21 +293,6 @@ export default function Dashboard() {
               <div>
                 <h3 className="font-semibold text-sm">Schedule Match</h3>
                 <p className="text-xs text-muted-foreground">Plan new games</p>
-              </div>
-            </div>
-          </Card>
-          
-          <Card 
-            className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-green-500/50"
-            onClick={() => setIsQuickScoreDialogOpen(true)}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-green-500/10 rounded-xl">
-                <Target className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-sm">Live Scoring</h3>
-                <p className="text-xs text-muted-foreground">Track matches</p>
               </div>
             </div>
           </Card>
@@ -585,22 +565,16 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Link href="/analytics">
+                <Link href="/availability">
                   <Button variant="ghost" className="w-full justify-start">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Performance Analytics
+                    <CalendarCheck className="h-4 w-4 mr-2" />
+                    Player Availability
                   </Button>
                 </Link>
                 <Link href="/invoices">
                   <Button variant="ghost" className="w-full justify-start">
                     <DollarSign className="h-4 w-4 mr-2" />
                     Invoices & Billing
-                  </Button>
-                </Link>
-                <Link href="/live-scoring">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <Target className="h-4 w-4 mr-2" />
-                    Live Match Scoring
                   </Button>
                 </Link>
               </div>
@@ -750,71 +724,6 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isQuickScoreDialogOpen} onOpenChange={setIsQuickScoreDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Quick Score Match</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Select a match to start scoring or continue live scoring
-            </p>
-            
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Live Matches</h4>
-              <div className="space-y-2">
-                {matches && matches.filter((match: any) => match.status === 'live').length > 0 ? (
-                  matches.filter((match: any) => match.status === 'live').map((match: any) => (
-                    <Link key={match.id} href="/live-scoring">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start bg-green-50 hover:bg-green-100 border-green-200"
-                        onClick={() => setIsQuickScoreDialogOpen(false)}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        {currentTeam?.name || 'Team'} vs Opponent - Live
-                      </Button>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No live matches</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium">Upcoming Matches</h4>
-              <div className="space-y-2">
-                {upcoming && upcoming.length > 0 ? (
-                  upcoming.slice(0, 3).map((match: any) => (
-                    <Link key={match.id} href="/live-scoring">
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => setIsQuickScoreDialogOpen(false)}
-                      >
-                        <Calendar className="h-4 w-4 mr-2" />
-                        {currentTeam?.name || 'Team'} vs Opponent - {new Date(match.date).toLocaleDateString()}
-                      </Button>
-                    </Link>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">No upcoming matches scheduled</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsQuickScoreDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
