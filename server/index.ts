@@ -41,12 +41,10 @@ app.use((req, res, next) => {
 
 (async () => {
   // Run migrations at startup using the configured pool (SSL already handled)
-  try {
-    await migrate(db, { migrationsFolder: path.resolve(import.meta.dirname, "../migrations") });
-    log("Database migrations applied");
-  } catch (err) {
-    log(`Migration warning: ${(err as Error).message}`);
-  }
+  const migrationsFolder = path.resolve(import.meta.dirname, "../migrations");
+  log(`Running migrations from ${migrationsFolder}`);
+  await migrate(db, { migrationsFolder });
+  log("Database migrations applied successfully");
 
   const server = await registerRoutes(app);
 
