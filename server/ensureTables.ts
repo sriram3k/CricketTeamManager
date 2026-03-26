@@ -8,12 +8,13 @@ export async function ensureTables() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "users" (
-      "id" serial PRIMARY KEY NOT NULL,
-      "username" text NOT NULL,
-      "password" text NOT NULL,
-      "role" text DEFAULT 'player' NOT NULL,
-      "team_id" integer,
-      CONSTRAINT "users_username_unique" UNIQUE("username")
+      "id" varchar PRIMARY KEY NOT NULL,
+      "email" varchar UNIQUE,
+      "first_name" varchar,
+      "last_name" varchar,
+      "profile_image_url" varchar,
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp DEFAULT now()
     );
 
     CREATE TABLE IF NOT EXISTS "local_users" (
@@ -44,23 +45,29 @@ export async function ensureTables() {
       "captain_id" integer,
       "vice_captain_id" integer,
       "team_type" text DEFAULT 'recreational',
-      "created_at" timestamp DEFAULT now()
+      "contact_email" text,
+      "contact_phone" text,
+      "website" text,
+      "founded_year" integer,
+      "team_color" text DEFAULT '#3B82F6',
+      "is_active" boolean DEFAULT true,
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp DEFAULT now()
     );
 
     CREATE TABLE IF NOT EXISTS "players" (
       "id" serial PRIMARY KEY NOT NULL,
       "user_id" integer,
-      "local_user_id" integer,
-      "team_id" integer NOT NULL,
       "name" text NOT NULL,
-      "position" text,
+      "email" text,
+      "phone" text,
+      "date_of_birth" timestamp,
+      "preferred_position" text,
       "batting_style" text,
       "bowling_style" text,
-      "jersey_number" integer,
-      "phone" text,
-      "email" text,
       "is_active" boolean DEFAULT true,
-      "created_at" timestamp DEFAULT now()
+      "created_at" timestamp DEFAULT now(),
+      "updated_at" timestamp DEFAULT now()
     );
 
     CREATE TABLE IF NOT EXISTS "player_teams" (
@@ -202,5 +209,39 @@ export async function ensureTables() {
       "accepted_at" timestamp,
       CONSTRAINT "player_invites_token_unique" UNIQUE("token")
     );
+  `);
+
+  // Migrate existing tables: add columns that were added in schema updates.
+  // These are idempotent — ADD COLUMN IF NOT EXISTS is a no-op if column already exists.
+  await pool.query(`
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "contact_email" text;
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "contact_phone" text;
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "website" text;
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "founded_year" integer;
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "team_color" text DEFAULT '#3B82F6';
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "is_active" boolean DEFAULT true;
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();
+
+    ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "preferred_position" text;
+    ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "date_of_birth" timestamp;
+    ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();
+  `);
+
+  // Make players.team_id nullable — old schema had it NOT NULL which blocks Drizzle INSERTs
+  // (Drizzle schema no longer includes team_id in players; teams are tracked via player_teams)
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'crickiq'
+          AND table_name = 'players'
+          AND column_name = 'team_id'
+          AND is_nullable = 'NO'
+      ) THEN
+        ALTER TABLE "players" ALTER COLUMN "team_id" DROP NOT NULL;
+      END IF;
+    END
+    $$;
   `);
 }

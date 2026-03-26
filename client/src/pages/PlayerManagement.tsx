@@ -53,6 +53,7 @@ export default function PlayerManagement() {
 
   const { data: userTeams = [] } = useQuery({
     queryKey: ["/api/teams/manager", (user as any)?.id],
+    queryFn: () => fetch(`/api/teams/manager/${(user as any).id}`).then(res => res.json()),
     enabled: !!(user as any)?.id,
   });
 

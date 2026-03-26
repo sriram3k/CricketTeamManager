@@ -32,18 +32,20 @@ export default function Payments() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
-  const teamId = 1; // This would come from user context
   const { user } = useAuth();
+  const teamId = (user as any)?.teamId || 0;
   
   // Check if user is a player (role-based access control)
   const isPlayer = user?.role === "player";
 
   const { data: pendingPayments, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/payments/pending`],
+    enabled: !!teamId,
   });
 
   const { data: players } = useQuery({
     queryKey: [`/api/teams/${teamId}/players/active`],
+    enabled: !!teamId,
   });
 
   const { data: playerPayments } = useQuery({

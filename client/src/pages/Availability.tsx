@@ -24,18 +24,20 @@ export default function Availability() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
-  const teamId = 1; // This would come from user context
   const { user } = useAuth();
+  const teamId = (user as any)?.teamId || 0;
   
   // Check if user is a player (role-based access control)
   const isPlayer = user?.role === "player";
 
   const { data: availabilityRequests, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
+    enabled: !!teamId,
   });
 
   const { data: players } = useQuery({
     queryKey: [`/api/teams/${teamId}/players/active`],
+    enabled: !!teamId,
   });
 
   const { data: availabilityResponses } = useQuery({
