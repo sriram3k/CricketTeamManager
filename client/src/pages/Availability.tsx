@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -14,6 +15,7 @@ import { insertAvailabilityRequestSchema } from "@shared/schema";
 import { Plus, Calendar, Users, CheckCircle, XCircle, Clock } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const availabilityFormSchema = insertAvailabilityRequestSchema.extend({
   venue: z.string().min(1, "Venue is required"),
@@ -24,9 +26,11 @@ export default function Availability() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [detailResponses, setDetailResponses] = useState<any[]>([]);
   const { user } = useAuth();
+  const { toast } = useToast();
   const teamId = (user as any)?.teamId || 0;
-  
+
   // Check if user is a player (role-based access control)
   const isPlayer = user?.role === "player";
 
@@ -67,19 +71,36 @@ export default function Availability() {
     },
   });
 
+  const recordResponseMutation = useMutation({
+    mutationFn: (data: { requestId: number; playerId: number; status: string }) =>
+      apiRequest("POST", "/api/availability-responses", data),
+    onSuccess: async (_, variables) => {
+      toast({ title: "Availability recorded", description: "Player availability has been saved." });
+      // Refresh responses for the open dialog
+      const updated = await queryClient.fetchQuery({
+        queryKey: [`/api/availability-requests/${variables.requestId}/responses`],
+      });
+      setDetailResponses(updated as any[]);
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/availability-requests`] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to record availability.", variant: "destructive" });
+    },
+  });
+
   const handleViewDetails = async (request: any) => {
     setSelectedRequest(request);
-    
-    // Fetch detailed responses for this specific request
+    setDetailResponses([]);
+
     try {
       const responses = await queryClient.fetchQuery({
         queryKey: [`/api/availability-requests/${request.id}/responses`],
       });
-      setSelectedRequest({ ...request, responses });
+      setDetailResponses(responses as any[]);
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
-    
+
     setIsDetailsDialogOpen(true);
   };
 
@@ -103,22 +124,11 @@ export default function Availability() {
   const onSubmit = (data: any) => {
     createRequestMutation.mutate({
       ...data,
+      teamId: teamId, // Always use the current user's teamId, not the stale default
       requestDate: new Date().toISOString(),
       matchDate: new Date(data.matchDate).toISOString(),
       deadline: new Date(data.deadline).toISOString(),
     });
-  };
-
-  const getResponseStats = async (requestId: number) => {
-    const responses = await queryClient.fetchQuery({
-      queryKey: [`/api/availability-requests/${requestId}/responses`],
-    });
-    
-    const available = responses?.filter((r: any) => r.status === 'available').length || 0;
-    const unavailable = responses?.filter((r: any) => r.status === 'unavailable').length || 0;
-    const pending = (players?.length || 0) - available - unavailable;
-    
-    return { available, unavailable, pending };
   };
 
   if (isLoading) {
@@ -419,37 +429,59 @@ export default function Availability() {
               )}
 
               <div>
-                <h3 className="font-medium mb-3">Player Responses</h3>
+                <h3 className="font-medium mb-3">Player Availability</h3>
                 <div className="space-y-2">
-                  {(selectedRequest.responses || []).map((response: any) => {
-                    const player = players?.find((p: any) => p.id === response.playerId);
-                    return (
-                      <div key={response.id} className="flex items-center justify-between p-3 border rounded-md">
-                        <div>
-                          <p className="font-medium">{player?.name || `Player ${response.playerId}`}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Responded on {new Date(response.responseDate).toLocaleDateString()}
-                          </p>
-                          {response.message && (
-                            <p className="text-sm text-muted-foreground mt-1">{response.message}</p>
-                          )}
+                  {players && players.length > 0 ? (
+                    players.map((player: any) => {
+                      const response = detailResponses.find((r: any) => r.playerId === player.id);
+                      return (
+                        <div key={player.id} className="flex items-center justify-between p-3 border rounded-md">
+                          <div>
+                            <p className="font-medium">{player.name}</p>
+                            {response && (
+                              <p className="text-xs text-muted-foreground">
+                                Responded {new Date(response.responseDate).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {response && (
+                              <Badge
+                                variant={
+                                  response.status === 'available' ? 'default' :
+                                  response.status === 'unavailable' ? 'destructive' :
+                                  'secondary'
+                                }
+                              >
+                                {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
+                              </Badge>
+                            )}
+                            <Select
+                              onValueChange={(value) =>
+                                recordResponseMutation.mutate({
+                                  requestId: selectedRequest.id,
+                                  playerId: player.id,
+                                  status: value,
+                                })
+                              }
+                              value={response?.status || ""}
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue placeholder="Set status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="available">Available</SelectItem>
+                                <SelectItem value="unavailable">Unavailable</SelectItem>
+                                <SelectItem value="maybe">Maybe</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <Badge 
-                          variant={
-                            response.status === 'available' ? 'default' : 
-                            response.status === 'unavailable' ? 'destructive' : 
-                            'secondary'
-                          }
-                        >
-                          {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                  
-                  {(!selectedRequest.responses || selectedRequest.responses.length === 0) && (
+                      );
+                    })
+                  ) : (
                     <div className="text-center py-8">
-                      <p className="text-muted-foreground">No responses yet</p>
+                      <p className="text-muted-foreground">No players in team yet</p>
                     </div>
                   )}
                 </div>

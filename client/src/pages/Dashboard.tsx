@@ -88,7 +88,7 @@ export default function Dashboard() {
   const matchForm = useForm({
     resolver: zodResolver(matchFormSchema),
     defaultValues: {
-      homeTeamId: 0, // Will be selected from dropdown
+      homeTeamId: teamId || 0,
       date: "",
       venue: "",
       status: "scheduled",
@@ -121,9 +121,10 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/upcoming`] });
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/matches/recent`] });
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/dashboard`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${selectedTeamId}/availability-requests`] });
       setIsScheduleDialogOpen(false);
       matchForm.reset({
-        homeTeamId: 0,
+        homeTeamId: teamId || 0,
         date: "",
         venue: "",
         status: "scheduled",
@@ -589,6 +590,9 @@ export default function Dashboard() {
         if (!open) {
           setEditingMatch(null);
           matchForm.reset();
+        } else if (!editingMatch) {
+          // Pre-fill the user's team when opening for a new match
+          matchForm.setValue("homeTeamId", teamId || 0);
         }
       }}>
         <DialogContent className="max-w-md">
