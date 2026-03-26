@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npm run db:push || echo "Warning: db:push failed, continuing with startup..."
+npm run db:push
 
 echo "Starting server..."
 npm start
