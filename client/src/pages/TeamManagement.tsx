@@ -80,7 +80,8 @@ export default function TeamManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/manager", (user as any)?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setIsCreateDialogOpen(false);
       createForm.reset();
       toast({
@@ -111,7 +112,7 @@ export default function TeamManagement() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams/manager", (user as any)?.id] });
       setEditingTeam(null);
       editForm.reset();
       toast({
@@ -157,7 +158,9 @@ export default function TeamManagement() {
   });
 
   const handleCreateTeam = (data: TeamFormData) => {
-    createTeamMutation.mutate(data);
+    // Always stamp the current user's id — the form default may have been 0
+    // if the user object hadn't loaded yet when the form was initialized.
+    createTeamMutation.mutate({ ...data, managerId: (user as any)?.id });
   };
 
   const handleUpdateTeam = (data: TeamFormData) => {
