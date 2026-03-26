@@ -1,9 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { db } from "./db";
-import path from "path";
+import { ensureTables } from "./ensureTables";
 
 const app = express();
 app.use(express.json());
@@ -40,11 +38,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Run migrations at startup using the configured pool (SSL already handled)
-  const migrationsFolder = path.resolve(import.meta.dirname, "../migrations");
-  log(`Running migrations from ${migrationsFolder}`);
-  await migrate(db, { migrationsFolder });
-  log("Database migrations applied successfully");
+  // Create all tables if they don't exist using the configured pool
+  await ensureTables();
+  log("Database tables ready");
 
   const server = await registerRoutes(app);
 
