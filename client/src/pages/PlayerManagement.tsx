@@ -20,7 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const playerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().email("Invalid email address").or(z.literal("")).optional(),
   phone: z.string().optional(),
   preferredPosition: z.string().optional(),
   battingStyle: z.string().optional(),
