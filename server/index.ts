@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { db } from "./db";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +40,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run migrations at startup using the configured pool (SSL already handled)
+  try {
+    await migrate(db, { migrationsFolder: path.resolve(import.meta.dirname, "../migrations") });
+    log("Database migrations applied");
+  } catch (err) {
+    log(`Migration warning: ${(err as Error).message}`);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

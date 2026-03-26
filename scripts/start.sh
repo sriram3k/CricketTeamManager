@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-npm run db:push
+NODE_TLS_REJECT_UNAUTHORIZED=0 npm run db:push
 
 echo "Starting server..."
 npm start
