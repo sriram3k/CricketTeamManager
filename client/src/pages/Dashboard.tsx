@@ -388,9 +388,9 @@ export default function Dashboard() {
                 </CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">Latest games and upcoming fixtures</p>
               </div>
-              <Link href="/analytics">
+              <Link href="/">
                 <Button variant="outline" size="sm">
-                  <BarChart3 className="h-4 w-4 mr-2" />
+                  <Calendar className="h-4 w-4 mr-2" />
                   View All
                 </Button>
               </Link>
@@ -408,7 +408,7 @@ export default function Dashboard() {
                             'bg-blue-100 text-blue-600'
                           }`}>
                             {match.status === 'live' ? (
-                              <Play className="h-5 w-5" />
+                              <Clock className="h-5 w-5" />
                             ) : match.status === 'completed' ? (
                               <CheckCircle className="h-5 w-5" />
                             ) : (
@@ -560,7 +560,7 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
+                <ArrowRight className="h-5 w-5" />
                 Quick Links
               </CardTitle>
             </CardHeader>
