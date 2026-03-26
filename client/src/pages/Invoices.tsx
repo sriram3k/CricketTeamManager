@@ -14,6 +14,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertInvoiceSchema } from "@shared/schema";
 import { Plus, FileText, DollarSign, Calendar, CheckCircle, AlertCircle, Eye } from "lucide-react";
 import { z } from "zod";
+import { useAuth } from "@/hooks/useAuth";
 
 const invoiceFormSchema = insertInvoiceSchema.extend({
   invoiceNumber: z.string().min(1, "Invoice number is required"),
@@ -24,14 +25,17 @@ const invoiceFormSchema = insertInvoiceSchema.extend({
 export default function Invoices() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const teamId = 1; // This would come from user context
+  const { user } = useAuth();
+  const teamId = (user as any)?.teamId || 0;
 
   const { data: invoices, isLoading } = useQuery({
     queryKey: [`/api/teams/${teamId}/invoices`],
+    enabled: !!teamId,
   });
 
   const { data: pendingInvoices } = useQuery({
     queryKey: [`/api/teams/${teamId}/invoices/pending`],
+    enabled: !!teamId,
   });
 
   const form = useForm({

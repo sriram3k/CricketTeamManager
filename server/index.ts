@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { ensureTables } from "./ensureTables";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +38,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Create/migrate all tables on startup
+  try {
+    await ensureTables();
+    log("Database tables ready");
+  } catch (err: any) {
+    log(`ERROR creating tables: ${err.message}`);
+    // Don't crash — let server start so health check passes
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

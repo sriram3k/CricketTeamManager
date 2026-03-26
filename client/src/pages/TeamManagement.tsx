@@ -534,7 +534,7 @@ export default function TeamManagement() {
                     variant="outline" 
                     size="sm" 
                     className="w-full"
-                    onClick={() => navigate("/players")}
+                    onClick={() => navigate("/player-management")}
                   >
                     <Users className="mr-2 h-3 w-3" />
                     Manage Players

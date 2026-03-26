@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,12 +19,14 @@ import { useState } from "react";
 
 export default function Analytics() {
   const [selectedPeriod, setSelectedPeriod] = useState("last30");
-  const teamId = 1; // This would come from user context
+  const { user } = useAuth();
+  const teamId = (user as any)?.teamId || 0;
 
   const { dashboardStats, recentMatches, isLoading } = useCricketData(teamId);
 
   const { data: players } = useQuery({
     queryKey: [`/api/teams/${teamId}/players/active`],
+    enabled: !!teamId,
   });
 
   if (isLoading) {

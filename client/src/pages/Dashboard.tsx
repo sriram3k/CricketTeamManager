@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCricketData } from "@/hooks/use-cricket-data";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Trophy,
   Users,
@@ -49,7 +50,8 @@ export default function Dashboard() {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isQuickScoreDialogOpen, setIsQuickScoreDialogOpen] = useState(false);
   const [editingMatch, setEditingMatch] = useState<any>(null);
-  const teamId = 1;
+  const { user } = useAuth();
+  const teamId = (user as any)?.teamId || 0;
 
   // Helper function to get team names for matches
   const getMatchTitle = (match: any, teams: any[]) => {
@@ -69,10 +71,12 @@ export default function Dashboard() {
 
   const { data: pendingPayments = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/payments/pending`],
+    enabled: !!teamId,
   });
 
   const { data: availabilityRequests = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
+    enabled: !!teamId,
   });
 
   const { data: allTeams = [] } = useQuery({
@@ -237,6 +241,30 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!teamId) {
+    return (
+      <div className="space-y-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">CrickIQ - Cricket Team Management</h1>
+          <p className="text-muted-foreground mt-2">Welcome! Get started by creating your first team.</p>
+        </div>
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <Trophy className="h-16 w-16 text-muted-foreground opacity-50" />
+          <h2 className="text-xl font-semibold">No team yet</h2>
+          <p className="text-muted-foreground text-center">
+            Create your first cricket team to start managing players, matches, and more.
+          </p>
+          <Link href="/team-management">
+            <Button className="mt-4">
+              <Users className="mr-2 h-4 w-4" />
+              Create Your Team
+            </Button>
+          </Link>
+        </div>
       </div>
     );
   }

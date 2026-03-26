@@ -30,13 +30,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get full user data including role from database
         const fullUser = await storage.getLocalUser(localUser.id);
         if (fullUser) {
+          // If user has no teamId set but manages a team, look it up
+          let teamId = fullUser.teamId;
+          if (!teamId) {
+            const managedTeams = await storage.getTeamsByManager(fullUser.id);
+            if (managedTeams.length > 0) {
+              teamId = managedTeams[0].id;
+              // Cache it on the user record
+              await storage.updateLocalUser(fullUser.id, { teamId });
+            }
+          }
           return res.json({
             id: fullUser.id,
             email: fullUser.email,
             username: fullUser.username,
             firstName: fullUser.firstName,
             lastName: fullUser.lastName,
-            role: fullUser.role
+            role: fullUser.role,
+            teamId,
           });
         }
       }
@@ -316,10 +327,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(team);
   });
 
-  app.post("/api/teams", async (req, res) => {
+  app.post("/api/teams", async (req: any, res) => {
     try {
       const teamData = insertTeamSchema.parse(req.body);
       const team = await storage.createTeam(teamData);
+
+      // Set the creating user's teamId if they don't have one yet
+      if (req.session?.localUser) {
+        const localUser = await storage.getLocalUser(req.session.localUser.id);
+        if (localUser && !localUser.teamId) {
+          await storage.updateLocalUser(localUser.id, { teamId: team.id });
+        }
+      }
+
       res.status(201).json(team);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -681,8 +701,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Availability Requests
   app.get("/api/availability", async (req: any, res) => {
     try {
-      // For role-based filtering, get all availability requests for the user's team
-      const requests = await storage.getAvailabilityRequestsByTeam(1); // Using team ID 1 for now
+      // Get availability requests for the logged-in user's team
+      let teamId: number | null = null;
+      if (req.session?.localUser) {
+        const localUser = await storage.getLocalUser(req.session.localUser.id);
+        if (localUser?.teamId) {
+          teamId = localUser.teamId;
+        } else {
+          // Fallback: find first team managed by this user
+          const managedTeams = await storage.getTeamsByManager(localUser.id);
+          if (managedTeams.length > 0) teamId = managedTeams[0].id;
+        }
+      }
+      if (!teamId) {
+        return res.json([]);
+      }
+      const requests = await storage.getAvailabilityRequestsByTeam(teamId);
       res.json(requests);
     } catch (error) {
       console.error("Error fetching availability requests:", error);

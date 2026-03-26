@@ -66,19 +66,29 @@ export class DatabaseStorage implements IStorage {
     // Update manager's teamId
     await db.update(localUsers).set({ teamId: team.id }).where(eq(localUsers.id, manager.id));
 
-    // Create sample players
+    // Create sample players (no teamId/jerseyNumber on players — those live in player_teams)
     const playerData = [
-      { name: "Rohit Sharma", position: "batsman", jerseyNumber: 45, userId: manager.id + 1, teamId: team.id, isActive: true },
-      { name: "Jasprit Bumrah", position: "bowler", jerseyNumber: 93, userId: manager.id + 2, teamId: team.id, isActive: true },
-      { name: "Hardik Pandya", position: "all-rounder", jerseyNumber: 33, userId: manager.id + 3, teamId: team.id, isActive: true },
-      { name: "MS Dhoni", position: "wicket-keeper", jerseyNumber: 7, userId: manager.id + 4, teamId: team.id, isActive: true },
-      { name: "Virat Kohli", position: "batsman", jerseyNumber: 18, userId: manager.id + 5, teamId: team.id, isActive: true },
-      { name: "Ravindra Jadeja", position: "all-rounder", jerseyNumber: 8, userId: manager.id + 6, teamId: team.id, isActive: true },
-      { name: "Shikhar Dhawan", position: "batsman", jerseyNumber: 25, userId: manager.id + 7, teamId: team.id, isActive: true },
-      { name: "Mohammed Shami", position: "bowler", jerseyNumber: 11, userId: manager.id + 8, teamId: team.id, isActive: true },
+      { name: "Rohit Sharma", preferredPosition: "batsman", isActive: true },
+      { name: "Jasprit Bumrah", preferredPosition: "bowler", isActive: true },
+      { name: "Hardik Pandya", preferredPosition: "all-rounder", isActive: true },
+      { name: "MS Dhoni", preferredPosition: "wicket-keeper", isActive: true },
+      { name: "Virat Kohli", preferredPosition: "batsman", isActive: true },
+      { name: "Ravindra Jadeja", preferredPosition: "all-rounder", isActive: true },
+      { name: "Shikhar Dhawan", preferredPosition: "batsman", isActive: true },
+      { name: "Mohammed Shami", preferredPosition: "bowler", isActive: true },
     ];
 
     const createdPlayers = await db.insert(players).values(playerData).returning();
+
+    // Link players to the sample team via player_teams junction table
+    for (let i = 0; i < createdPlayers.length; i++) {
+      await db.insert(playerTeams).values({
+        playerId: createdPlayers[i].id,
+        teamId: team.id,
+        position: playerData[i].preferredPosition,
+        isActive: true,
+      });
+    }
 
     // Create sample matches
     const today = new Date();
