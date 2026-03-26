@@ -1,6 +1,16 @@
 import { pool } from "./db";
 
 export async function ensureTables() {
+  // Try to ensure schema access. On DO PostgreSQL 15+ the public schema
+  // requires an explicit grant. If we can't grant, try anyway.
+  await pool.query(`
+    DO $$ BEGIN
+      EXECUTE 'GRANT ALL ON SCHEMA public TO ' || quote_ident(current_user);
+    EXCEPTION WHEN insufficient_privilege THEN
+      NULL; -- continue, table creation may still work if user owns schema
+    END $$;
+  `).catch(() => {});
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "users" (
       "id" serial PRIMARY KEY NOT NULL,
