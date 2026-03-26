@@ -39,8 +39,17 @@ app.use((req, res, next) => {
 
 (async () => {
   // Create all tables if they don't exist using the configured pool
-  await ensureTables();
-  log("Database tables ready");
+  try {
+    await ensureTables();
+    log("Database tables ready");
+  } catch (err: any) {
+    if (err.code === "42501") {
+      log("ERROR: permission denied for schema public. Run in DO Console: GRANT ALL ON SCHEMA public TO doadmin;");
+    } else {
+      log(`ERROR creating tables: ${err.message}`);
+    }
+    // Don't crash — let server start so health check passes
+  }
 
   const server = await registerRoutes(app);
 
