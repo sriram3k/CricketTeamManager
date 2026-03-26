@@ -15,6 +15,13 @@
       "when": 1749552868951,
       "tag": "0001_curvy_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749600000000,
+      "tag": "0002_add_local_users_and_teams",
+      "breakpoints": true
     }
   ]
 }
