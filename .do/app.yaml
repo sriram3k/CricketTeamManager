@@ -8,7 +8,7 @@ services:
       branch: main
       deploy_on_push: true
     build_command: npm install && npm run build
-    run_command: npm run db:push && npm start
+    run_command: sh scripts/start.sh
     instance_size_slug: basic-xs
     instance_count: 1
     envs:
