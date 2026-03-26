@@ -12,8 +12,14 @@ if (!process.env.DATABASE_URL) {
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Strip sslmode from connection string — pg conflicts when both
+// connectionString sslmode and explicit ssl option are provided
+const connectionString = process.env.DATABASE_URL!
+  .replace(/[?&]sslmode=[^&]*/g, '')
+  .replace(/[?&]ssl=[^&]*/g, '');
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
