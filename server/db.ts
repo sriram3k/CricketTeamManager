@@ -23,4 +23,10 @@ export const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
+// Set search_path on every new connection so all queries find tables
+// in the crickiq schema (avoids public schema permission issues on PG15)
+pool.on('connect', (client) => {
+  client.query('SET search_path TO crickiq, public').catch(() => {});
+});
+
 export const db = drizzle({ client: pool, schema });

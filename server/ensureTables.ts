@@ -1,15 +1,10 @@
 import { pool } from "./db";
 
 export async function ensureTables() {
-  // Try to ensure schema access. On DO PostgreSQL 15+ the public schema
-  // requires an explicit grant. If we can't grant, try anyway.
-  await pool.query(`
-    DO $$ BEGIN
-      EXECUTE 'GRANT ALL ON SCHEMA public TO ' || quote_ident(current_user);
-    EXCEPTION WHEN insufficient_privilege THEN
-      NULL; -- continue, table creation may still work if user owns schema
-    END $$;
-  `).catch(() => {});
+  // Create our own schema — any user can create a schema they own.
+  // This bypasses the PostgreSQL 15 restriction on public schema CREATE.
+  await pool.query(`CREATE SCHEMA IF NOT EXISTS crickiq`);
+  await pool.query(`SET search_path TO crickiq, public`);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS "users" (
