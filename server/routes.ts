@@ -832,8 +832,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/availability-responses", async (req, res) => {
     try {
       const responseData = insertAvailabilityResponseSchema.parse(req.body);
-      const response = await storage.createAvailabilityResponse(responseData);
-      res.status(201).json(response);
+      // Upsert: update existing response if the player already responded
+      const existing = await storage.getPlayerAvailabilityForRequest(
+        responseData.requestId,
+        responseData.playerId
+      );
+      if (existing) {
+        const updated = await storage.updateAvailabilityResponse(existing.id, responseData.status);
+        res.json(updated);
+      } else {
+        const response = await storage.createAvailabilityResponse(responseData);
+        res.status(201).json(response);
+      }
     } catch (error) {
       res.status(400).json({ message: "Invalid availability response data", error });
     }

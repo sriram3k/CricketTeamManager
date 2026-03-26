@@ -76,7 +76,8 @@ export default function Availability() {
       apiRequest("POST", "/api/availability-responses", data),
     onSuccess: async (_, variables) => {
       toast({ title: "Availability recorded", description: "Player availability has been saved." });
-      // Refresh responses for the open dialog
+      // Invalidate cache so fetchQuery gets fresh data (staleTime is Infinity by default)
+      await queryClient.invalidateQueries({ queryKey: [`/api/availability-requests/${variables.requestId}/responses`] });
       const updated = await queryClient.fetchQuery({
         queryKey: [`/api/availability-requests/${variables.requestId}/responses`],
       });
@@ -93,6 +94,8 @@ export default function Availability() {
     setDetailResponses([]);
 
     try {
+      // Invalidate cache first so we always load fresh responses
+      await queryClient.invalidateQueries({ queryKey: [`/api/availability-requests/${request.id}/responses`] });
       const responses = await queryClient.fetchQuery({
         queryKey: [`/api/availability-requests/${request.id}/responses`],
       });

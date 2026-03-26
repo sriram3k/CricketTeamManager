@@ -615,6 +615,14 @@ export class DatabaseStorage implements IStorage {
     return response;
   }
 
+  async updateAvailabilityResponse(id: number, status: string): Promise<AvailabilityResponse> {
+    const [updated] = await db.update(availabilityResponses)
+      .set({ status, responseDate: new Date() })
+      .where(eq(availabilityResponses.id, id))
+      .returning();
+    return updated;
+  }
+
   async getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined> {
     const [response] = await db.select().from(availabilityResponses)
       .where(and(eq(availabilityResponses.requestId, requestId), eq(availabilityResponses.playerId, playerId)));

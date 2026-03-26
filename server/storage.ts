@@ -73,6 +73,7 @@ export interface IStorage {
   createAvailabilityRequest(request: InsertAvailabilityRequest): Promise<AvailabilityRequest>;
   getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]>;
   createAvailabilityResponse(response: InsertAvailabilityResponse): Promise<AvailabilityResponse>;
+  updateAvailabilityResponse(id: number, status: string): Promise<AvailabilityResponse>;
   getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined>;
 
   // Payments
@@ -514,6 +515,14 @@ export class MemStorage implements IStorage {
     };
     this.availabilityResponses.set(response.id, response);
     return response;
+  }
+
+  async updateAvailabilityResponse(id: number, status: string): Promise<AvailabilityResponse> {
+    const existing = this.availabilityResponses.get(id);
+    if (!existing) throw new Error(`Availability response ${id} not found`);
+    const updated = { ...existing, status, responseDate: new Date() };
+    this.availabilityResponses.set(id, updated);
+    return updated;
   }
 
   async getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined> {
