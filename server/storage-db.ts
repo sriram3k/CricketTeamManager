@@ -607,17 +607,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]> {
-    // Order by id DESC so the most recent response per player comes first
-    const all = await db.select().from(availabilityResponses)
+    // Order by id DESC so the most recent response per player comes first.
+    // Join with players to exclude soft-deleted players (isActive = false).
+    const all = await db
+      .select({ response: availabilityResponses })
+      .from(availabilityResponses)
+      .innerJoin(players, and(eq(players.id, availabilityResponses.playerId), eq(players.isActive, true)))
       .where(eq(availabilityResponses.requestId, requestId))
       .orderBy(desc(availabilityResponses.id));
     // Deduplicate: keep only the latest response per player
     const seen = new Set<number>();
-    return all.filter(r => {
-      if (seen.has(r.playerId)) return false;
-      seen.add(r.playerId);
-      return true;
-    });
+    return all
+      .map(row => row.response)
+      .filter(r => {
+        if (seen.has(r.playerId)) return false;
+        seen.add(r.playerId);
+        return true;
+      });
   }
 
   async createAvailabilityResponse(insertResponse: InsertAvailabilityResponse): Promise<AvailabilityResponse> {
@@ -643,16 +649,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllAvailabilityResponses(): Promise<AvailabilityResponse[]> {
-    const all = await db.select().from(availabilityResponses)
+    // Join with players to exclude responses from soft-deleted players
+    const all = await db
+      .select({ response: availabilityResponses })
+      .from(availabilityResponses)
+      .innerJoin(players, and(eq(players.id, availabilityResponses.playerId), eq(players.isActive, true)))
       .orderBy(desc(availabilityResponses.id));
     // Deduplicate: keep only the latest response per player+request combination
     const seen = new Set<string>();
-    return all.filter(r => {
-      const key = `${r.requestId}-${r.playerId}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    return all
+      .map(row => row.response)
+      .filter(r => {
+        const key = `${r.requestId}-${r.playerId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
   }
 
   // Payments

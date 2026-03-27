@@ -116,10 +116,15 @@ export default function Availability() {
     }
   };
 
-  // Get responses for a specific request, deduplicated by player (latest wins)
+  // Get responses for a specific request, deduplicated by player (latest wins),
+  // filtered to only active team members
   const getRequestResponses = (requestId: number) => {
     if (!availabilityResponses) return [];
-    const all = (availabilityResponses as any[]).filter(r => r.requestId === requestId);
+    const activePlayers = (players as any[]) || [];
+    const activePlayerIds = new Set(activePlayers.map((p: any) => p.id));
+    const all = (availabilityResponses as any[]).filter(
+      r => r.requestId === requestId && activePlayerIds.has(r.playerId)
+    );
     const byPlayer = new Map<number, any>();
     for (const r of all) {
       if (!byPlayer.has(r.playerId) || r.id > byPlayer.get(r.playerId).id) {
@@ -131,12 +136,13 @@ export default function Availability() {
 
   // Get response counts for a request
   const getResponseCounts = (requestId: number) => {
+    const activePlayers = (players as any[]) || [];
     const responses = getRequestResponses(requestId);
     return {
       available: responses.filter((r: any) => r.status === 'available').length,
       unavailable: responses.filter((r: any) => r.status === 'unavailable').length,
       maybe: responses.filter((r: any) => r.status === 'maybe').length,
-      pending: (players?.length || 0) - responses.length
+      pending: activePlayers.length - responses.length
     };
   };
 
