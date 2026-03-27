@@ -109,10 +109,17 @@ export default function Availability() {
     }
   };
 
-  // Get responses for a specific request
+  // Get responses for a specific request, deduplicated by player (latest wins)
   const getRequestResponses = (requestId: number) => {
     if (!availabilityResponses) return [];
-    return availabilityResponses.filter((response: any) => response.requestId === requestId);
+    const all = (availabilityResponses as any[]).filter(r => r.requestId === requestId);
+    const byPlayer = new Map<number, any>();
+    for (const r of all) {
+      if (!byPlayer.has(r.playerId) || r.id > byPlayer.get(r.playerId).id) {
+        byPlayer.set(r.playerId, r);
+      }
+    }
+    return Array.from(byPlayer.values());
   };
 
   // Get response counts for a request

@@ -607,7 +607,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]> {
-    return await db.select().from(availabilityResponses).where(eq(availabilityResponses.requestId, requestId));
+    // Order by id DESC so the most recent response per player comes first
+    const all = await db.select().from(availabilityResponses)
+      .where(eq(availabilityResponses.requestId, requestId))
+      .orderBy(desc(availabilityResponses.id));
+    // Deduplicate: keep only the latest response per player
+    const seen = new Set<number>();
+    return all.filter(r => {
+      if (seen.has(r.playerId)) return false;
+      seen.add(r.playerId);
+      return true;
+    });
   }
 
   async createAvailabilityResponse(insertResponse: InsertAvailabilityResponse): Promise<AvailabilityResponse> {
@@ -630,7 +640,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllAvailabilityResponses(): Promise<AvailabilityResponse[]> {
-    return await db.select().from(availabilityResponses);
+    const all = await db.select().from(availabilityResponses)
+      .orderBy(desc(availabilityResponses.id));
+    // Deduplicate: keep only the latest response per player+request combination
+    const seen = new Set<string>();
+    return all.filter(r => {
+      const key = `${r.requestId}-${r.playerId}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
   // Payments
