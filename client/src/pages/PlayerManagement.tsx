@@ -25,6 +25,7 @@ const playerFormSchema = z.object({
   preferredPosition: z.string().optional(),
   battingStyle: z.string().optional(),
   bowlingStyle: z.string().optional(),
+  role: z.enum(["player", "manager"]).default("player"),
   teams: z.array(z.number()).optional(),
 });
 
@@ -66,6 +67,7 @@ export default function PlayerManagement() {
       preferredPosition: "",
       battingStyle: "",
       bowlingStyle: "",
+      role: "player",
     },
   });
 
@@ -248,6 +250,7 @@ export default function PlayerManagement() {
       preferredPosition: player.preferredPosition || "",
       battingStyle: player.battingStyle || "",
       bowlingStyle: player.bowlingStyle || "",
+      role: (player.role as "player" | "manager") || "player",
     });
     setIsDialogOpen(true);
   };
@@ -500,6 +503,28 @@ export default function PlayerManagement() {
                         <SelectItem value="left-arm medium">Left-arm Medium</SelectItem>
                         <SelectItem value="right-arm spin">Right-arm Spin</SelectItem>
                         <SelectItem value="left-arm spin">Left-arm Spin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="player">Player</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

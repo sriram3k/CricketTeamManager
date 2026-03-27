@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import {
 
 export default function PlayerDashboard() {
   const { toast } = useToast();
-  
+  const [myResponses, setMyResponses] = useState<Record<number, string>>({});
+
   const { data: user } = useQuery({
     queryKey: ["/api/auth/user"],
   });
@@ -48,29 +49,53 @@ export default function PlayerDashboard() {
     queryKey: ["/api/availability"],
   });
 
+  // Load the player's existing responses for all requests
+  useEffect(() => {
+    if (!currentPlayer?.id || !(availabilityRequests as any[]).length) return;
+    const fetchResponses = async () => {
+      const results: Record<number, string> = {};
+      await Promise.all(
+        (availabilityRequests as any[]).map(async (req: any) => {
+          try {
+            const res = await fetch(
+              `/api/availability-requests/${req.id}/players/${currentPlayer.id}`,
+              { credentials: "include" }
+            );
+            if (res.ok) {
+              const data = await res.json();
+              if (data?.status) results[req.id] = data.status;
+            }
+          } catch (_) {}
+        })
+      );
+      setMyResponses(results);
+    };
+    fetchResponses();
+  }, [currentPlayer?.id, (availabilityRequests as any[]).length]);
+
   const respondToAvailabilityMutation = useMutation({
     mutationFn: async ({ requestId, response }: { requestId: number; response: string }) => {
       if (!currentPlayer) {
         throw new Error('Player not found');
       }
-      
-      return apiRequest("/api/availability-responses", "POST", { 
-        requestId, 
+      return apiRequest("POST", "/api/availability-responses", {
+        requestId,
         playerId: currentPlayer.id,
-        status: response 
+        status: response
       });
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
         title: "Response submitted",
         description: "Your availability response has been recorded.",
       });
+      setMyResponses(prev => ({ ...prev, [variables.requestId]: variables.response }));
       queryClient.invalidateQueries({ queryKey: ["/api/availability"] });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "Error",
-        description: "Failed to submit availability response.",
+        description: error?.message || "Failed to submit availability response.",
         variant: "destructive",
       });
     },
@@ -216,24 +241,39 @@ export default function PlayerDashboard() {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2">
-                        <Select 
-                          onValueChange={(value) => 
-                            respondToAvailabilityMutation.mutate({ 
-                              requestId: request.id, 
-                              response: value 
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Your response" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="unavailable">Unavailable</SelectItem>
-                            <SelectItem value="maybe">Maybe</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="flex gap-2 items-center">
+                        {myResponses[request.id] ? (
+                          <Badge
+                            variant={
+                              myResponses[request.id] === "available"
+                                ? "default"
+                                : myResponses[request.id] === "unavailable"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {myResponses[request.id].charAt(0).toUpperCase() + myResponses[request.id].slice(1)}
+                          </Badge>
+                        ) : (
+                          <Select
+                            onValueChange={(value) =>
+                              respondToAvailabilityMutation.mutate({
+                                requestId: request.id,
+                                response: value,
+                              })
+                            }
+                            disabled={respondToAvailabilityMutation.isPending}
+                          >
+                            <SelectTrigger className="w-40">
+                              <SelectValue placeholder="Your response" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="available">Available</SelectItem>
+                              <SelectItem value="unavailable">Unavailable</SelectItem>
+                              <SelectItem value="maybe">Maybe</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </div>
                     </div>
                   ))}

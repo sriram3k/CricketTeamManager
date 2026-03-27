@@ -458,10 +458,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/players", async (req, res) => {
     try {
       const { teams, ...playerData } = req.body;
-      
+
       // Create the player first
       const player = await storage.createPlayer(playerData);
-      
+
       // If teams are specified, add player to those teams
       if (teams && Array.isArray(teams)) {
         for (const teamAssignment of teams) {
@@ -472,7 +472,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
+      // If a role is specified and the player has an email, sync role to the matching localUser
+      if (playerData.role && playerData.email) {
+        try {
+          const localUser = await storage.getLocalUserByEmail(playerData.email);
+          if (localUser) {
+            await storage.updateLocalUser(localUser.id, { role: playerData.role });
+          }
+        } catch (_) { /* no matching user yet — role will be applied on signup */ }
+      }
+
       res.status(201).json(player);
     } catch (error) {
       console.error("Error creating player:", error);
@@ -829,15 +839,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/availability-responses", async (req, res) => {
+  app.post("/api/availability-responses", async (req: any, res) => {
     try {
       const responseData = insertAvailabilityResponseSchema.parse(req.body);
-      // Upsert: update existing response if the player already responded
       const existing = await storage.getPlayerAvailabilityForRequest(
         responseData.requestId,
         responseData.playerId
       );
+
+      // Determine if the session user is a player (players cannot change their response)
+      let sessionIsPlayer = false;
+      if (req.session?.localUser) {
+        const sessionUser = await storage.getLocalUser(req.session.localUser.id);
+        sessionIsPlayer = sessionUser?.role === 'player';
+      }
+
+      if (existing && sessionIsPlayer) {
+        return res.status(403).json({ message: "You have already submitted your availability and cannot change it." });
+      }
+
       if (existing) {
+        // Manager updating on behalf of player
         const updated = await storage.updateAvailabilityResponse(existing.id, responseData.status);
         res.json(updated);
       } else {

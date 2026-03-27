@@ -72,6 +72,7 @@ export const players = pgTable("players", {
   preferredPosition: text("preferred_position"), // batsman, bowler, all-rounder, wicket-keeper
   battingStyle: text("batting_style"), // right-handed, left-handed
   bowlingStyle: text("bowling_style"), // right-arm fast, left-arm spin, etc
+  role: text("role").default("player"), // player, manager
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
