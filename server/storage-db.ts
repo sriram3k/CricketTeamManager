@@ -634,8 +634,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined> {
+    // Order by id DESC so we get the same "latest" row that getAvailabilityResponsesByRequest returns
     const [response] = await db.select().from(availabilityResponses)
-      .where(and(eq(availabilityResponses.requestId, requestId), eq(availabilityResponses.playerId, playerId)));
+      .where(and(eq(availabilityResponses.requestId, requestId), eq(availabilityResponses.playerId, playerId)))
+      .orderBy(desc(availabilityResponses.id))
+      .limit(1);
     return response || undefined;
   }
 

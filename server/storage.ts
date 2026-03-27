@@ -526,9 +526,11 @@ export class MemStorage implements IStorage {
   }
 
   async getPlayerAvailabilityForRequest(requestId: number, playerId: number): Promise<AvailabilityResponse | undefined> {
-    return Array.from(this.availabilityResponses.values()).find(
+    const matches = Array.from(this.availabilityResponses.values()).filter(
       response => response.requestId === requestId && response.playerId === playerId
     );
+    // Return the latest (highest id) to stay consistent with DB dedup logic
+    return matches.sort((a, b) => b.id - a.id)[0];
   }
 
   // Payments
