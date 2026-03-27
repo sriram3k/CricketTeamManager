@@ -354,8 +354,8 @@ export class DatabaseStorage implements IStorage {
       })
       .from(players)
       .innerJoin(playerTeams, eq(players.id, playerTeams.playerId))
-      .where(and(eq(playerTeams.teamId, teamId), eq(playerTeams.isActive, true)));
-    
+      .where(and(eq(playerTeams.teamId, teamId), eq(playerTeams.isActive, true), eq(players.isActive, true)));
+
     return result;
   }
 

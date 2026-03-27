@@ -140,6 +140,8 @@ export default function PlayerManagement() {
     mutationFn: (playerId: number) => apiRequest("DELETE", `/api/players/${playerId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/players"] });
+      // Also clear team-scoped player caches used by Availability and other pages
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"], exact: false });
       toast({
         title: "Success",
         description: "Player deleted successfully",
