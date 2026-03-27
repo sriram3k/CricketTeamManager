@@ -20,6 +20,10 @@ import { useToast } from "@/hooks/use-toast";
 const availabilityFormSchema = insertAvailabilityRequestSchema.extend({
   venue: z.string().min(1, "Venue is required"),
   opponent: z.string().min(1, "Opponent is required"),
+  // Override timestamp fields to accept plain strings from datetime-local inputs
+  matchDate: z.string().min(1, "Match date is required"),
+  deadline: z.string().min(1, "Response deadline is required"),
+  requestDate: z.string().optional(),
 });
 
 export default function Availability() {
@@ -53,11 +57,11 @@ export default function Availability() {
     defaultValues: {
       teamId: teamId,
       matchId: null,
-      requestDate: new Date(),
-      matchDate: new Date(),
+      requestDate: "",
+      matchDate: "",
       venue: "",
       opponent: "",
-      deadline: new Date(),
+      deadline: "",
       message: "",
     },
   });
@@ -67,7 +71,10 @@ export default function Availability() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/availability-requests`] });
       setIsDialogOpen(false);
-      form.reset();
+      form.reset({ teamId, matchId: null, requestDate: "", matchDate: "", venue: "", opponent: "", deadline: "", message: "" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error?.message || "Failed to create availability request.", variant: "destructive" });
     },
   });
 
@@ -136,10 +143,11 @@ export default function Availability() {
   const onSubmit = (data: any) => {
     createRequestMutation.mutate({
       ...data,
-      teamId: teamId, // Always use the current user's teamId, not the stale default
+      teamId,
       requestDate: new Date().toISOString(),
       matchDate: new Date(data.matchDate).toISOString(),
       deadline: new Date(data.deadline).toISOString(),
+      matchId: null,
     });
   };
 
@@ -209,18 +217,13 @@ export default function Availability() {
                     <FormItem>
                       <FormLabel>Match Date & Time</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="datetime-local" 
-                          {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : field.value}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                        />
+                        <Input type="datetime-local" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="deadline"
@@ -228,12 +231,7 @@ export default function Availability() {
                     <FormItem>
                       <FormLabel>Response Deadline</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="datetime-local" 
-                          {...field}
-                          value={field.value instanceof Date ? field.value.toISOString().slice(0, 16) : field.value}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                        />
+                        <Input type="datetime-local" {...field} value={field.value || ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
