@@ -76,15 +76,19 @@ export default function Availability() {
       apiRequest("POST", "/api/availability-responses", data),
     onSuccess: async (_, variables) => {
       toast({ title: "Availability recorded", description: "Player availability has been saved." });
-      // Invalidate cache so fetchQuery gets fresh data (staleTime is Infinity by default)
-      await queryClient.invalidateQueries({ queryKey: [`/api/availability-requests/${variables.requestId}/responses`] });
-      const updated = await queryClient.fetchQuery({
-        queryKey: [`/api/availability-requests/${variables.requestId}/responses`],
-      });
-      setDetailResponses(updated as any[]);
-      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/availability-requests`] });
+      try {
+        const res = await fetch(`/api/availability-requests/${variables.requestId}/responses`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          setDetailResponses(await res.json());
+        }
+      } catch (err) {
+        console.error("Failed to refresh responses:", err);
+      }
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Record availability error:", error);
       toast({ title: "Error", description: "Failed to record availability.", variant: "destructive" });
     },
   });
@@ -92,19 +96,17 @@ export default function Availability() {
   const handleViewDetails = async (request: any) => {
     setSelectedRequest(request);
     setDetailResponses([]);
-
+    setIsDetailsDialogOpen(true);
     try {
-      // Invalidate cache first so we always load fresh responses
-      await queryClient.invalidateQueries({ queryKey: [`/api/availability-requests/${request.id}/responses`] });
-      const responses = await queryClient.fetchQuery({
-        queryKey: [`/api/availability-requests/${request.id}/responses`],
+      const res = await fetch(`/api/availability-requests/${request.id}/responses`, {
+        credentials: "include",
       });
-      setDetailResponses(responses as any[]);
+      if (res.ok) {
+        setDetailResponses(await res.json());
+      }
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
-
-    setIsDetailsDialogOpen(true);
   };
 
   // Get responses for a specific request
