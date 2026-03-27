@@ -17,6 +17,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
+import JoinTeam from "@/pages/JoinTeam";
 import AppLayout from "@/components/layout/AppLayout";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
 import TourRestartButton from "@/components/onboarding/TourRestartButton";
@@ -47,6 +48,7 @@ function Router() {
   if (!isAuthenticated) {
     return (
       <Switch>
+        <Route path="/join-team/:token" component={JoinTeam} />
         <Route path="/signup" component={Signup} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
@@ -60,6 +62,7 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
+        <Route path="/join-team/:token" component={JoinTeam} />
         {isPlayer ? (
           // Player routes - restricted access
           <>

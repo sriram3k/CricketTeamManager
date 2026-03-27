@@ -226,6 +226,8 @@ export async function ensureTables() {
     ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "date_of_birth" timestamp;
     ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();
     ALTER TABLE "players" ADD COLUMN IF NOT EXISTS "role" text DEFAULT 'player';
+
+    ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "join_token" text;
   `);
 
   // Make players.team_id nullable — old schema had it NOT NULL which blocks Drizzle INSERTs

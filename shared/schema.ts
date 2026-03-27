@@ -57,6 +57,7 @@ export const teams = pgTable("teams", {
   website: text("website"),
   foundedYear: integer("founded_year"),
   teamColor: text("team_color").default("#3B82F6"),
+  joinToken: text("join_token"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

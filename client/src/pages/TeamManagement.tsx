@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTeamSchema, type Team, type InsertTeam } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit2, Users, MapPin, Calendar, Globe, Phone, Mail, Trophy, Palette, Trash2, MoreVertical } from "lucide-react";
+import { Plus, Edit2, Users, MapPin, Calendar, Globe, Phone, Mail, Trophy, Palette, Trash2, MoreVertical, Link2, Copy, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 
@@ -32,6 +32,8 @@ export default function TeamManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [deletingTeam, setDeletingTeam] = useState<Team | null>(null);
+  const [joinLinkDialog, setJoinLinkDialog] = useState<{ teamName: string; joinUrl: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -79,15 +81,21 @@ export default function TeamManagement() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (newTeam) => {
       queryClient.invalidateQueries({ queryKey: ["/api/teams/manager", (user as any)?.id] });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       setIsCreateDialogOpen(false);
       createForm.reset();
-      toast({
-        title: "Success",
-        description: "Team created successfully",
-      });
+      // Generate a join link for the newly created team
+      try {
+        const res = await fetch(`/api/teams/${newTeam.id}/join-link`, { method: "POST", credentials: "include" });
+        if (res.ok) {
+          const { joinUrl } = await res.json();
+          setJoinLinkDialog({ teamName: newTeam.name, joinUrl });
+          return;
+        }
+      } catch (_) {}
+      toast({ title: "Success", description: "Team created successfully" });
     },
     onError: (error: Error) => {
       toast({
@@ -156,6 +164,27 @@ export default function TeamManagement() {
       });
     },
   });
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const getJoinLink = async (team: Team) => {
+    try {
+      const res = await fetch(`/api/teams/${team.id}/join-link`, { method: "POST", credentials: "include" });
+      if (res.ok) {
+        const { joinUrl } = await res.json();
+        setJoinLinkDialog({ teamName: team.name, joinUrl });
+      } else {
+        toast({ title: "Error", description: "Failed to get join link", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to get join link", variant: "destructive" });
+    }
+  };
 
   const handleCreateTeam = (data: TeamFormData) => {
     // Always stamp the current user's id — the form default may have been 0
@@ -472,7 +501,11 @@ export default function TeamManagement() {
                         <Edit2 className="mr-2 h-4 w-4" />
                         Edit Team
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem onClick={() => getJoinLink(team)}>
+                        <Link2 className="mr-2 h-4 w-4" />
+                        Get Join Link
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={() => setDeletingTeam(team)}
                         className="text-red-600 focus:text-red-600"
                       >
@@ -592,6 +625,43 @@ export default function TeamManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Join Link Dialog */}
+      <Dialog open={!!joinLinkDialog} onOpenChange={() => { setJoinLinkDialog(null); setCopied(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-green-600" />
+              Team Join Link
+            </DialogTitle>
+            <DialogDescription>
+              Share this link with players to let them join <strong>{joinLinkDialog?.teamName}</strong>.
+              Anyone with this link can sign up and join the team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <span className="text-sm break-all flex-1 font-mono">{joinLinkDialog?.joinUrl}</span>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => joinLinkDialog && copyToClipboard(joinLinkDialog.joinUrl)}
+            >
+              {copied ? (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Link
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import { DatabaseStorage } from "./storage-db";
 
 const storage = new DatabaseStorage();
@@ -107,14 +108,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is signing up via invitation
       const inviteToken = req.query.invite as string;
+      const joinToken = req.query.joinToken as string;
       let userRole = 'manager'; // Default role for direct signups
-      
+
       if (inviteToken) {
         // If signing up via invite, always assign 'player' role
         const invite = await storage.getPlayerInviteByToken(inviteToken);
         if (invite && invite.email === userData.email && invite.status === 'pending') {
           userRole = 'player'; // Force player role for invited users
         }
+      } else if (joinToken) {
+        userRole = 'player'; // Joining via team link → player role
       }
       
       const user = await storage.createLocalUser({
@@ -146,6 +150,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Mark invitation as accepted
           await storage.updatePlayerInviteStatus(invite.id, 'accepted', new Date());
+        }
+      } else if (joinToken) {
+        // If user signed up via team join link, auto-join the team
+        const allTeams = await storage.getAllTeams();
+        const joinTeam = (allTeams as any[]).find((t: any) => t.joinToken === joinToken);
+        if (joinTeam) {
+          const player = await storage.createPlayer({
+            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username,
+            email: userData.email,
+            isActive: true,
+          });
+          await storage.addPlayerToTeam(player.id, joinTeam.id, { isActive: true });
         }
       }
 
@@ -408,6 +424,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Team deletion error:", error);
       res.status(500).json({ message: "Failed to delete team" });
+    }
+  });
+
+  // Generate (or return existing) reusable join link for a team
+  app.post("/api/teams/:teamId/join-link", async (req: any, res) => {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const team = await storage.getTeam(teamId);
+      if (!team) return res.status(404).json({ message: "Team not found" });
+
+      let { joinToken } = team as any;
+      if (!joinToken) {
+        joinToken = crypto.randomBytes(24).toString("hex");
+        await storage.updateTeam(teamId, { joinToken } as any);
+      }
+
+      const baseUrl = process.env.NODE_ENV === "production"
+        ? `https://${req.hostname}`
+        : `${req.protocol}://${req.hostname}:${process.env.PORT || 5000}`;
+      const joinUrl = `${baseUrl}/join-team/${joinToken}`;
+
+      res.json({ joinUrl, token: joinToken });
+    } catch (error) {
+      console.error("Join link error:", error);
+      res.status(500).json({ message: "Failed to generate join link" });
+    }
+  });
+
+  // Get team info by join token (public — no auth required)
+  app.get("/api/join-team/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const teams = await storage.getAllTeams();
+      const team = (teams as any[]).find((t: any) => t.joinToken === token);
+      if (!team) return res.status(404).json({ message: "Invalid join link" });
+      res.json({ id: team.id, name: team.name, description: team.description, teamType: team.teamType });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to look up team" });
+    }
+  });
+
+  // Join a team using its join token (requires auth — player must be signed in)
+  app.post("/api/join-team/:token", async (req: any, res) => {
+    try {
+      const { token } = req.params;
+      const sessionUser = req.session?.localUser;
+      if (!sessionUser) return res.status(401).json({ message: "Please sign in first" });
+
+      const teams = await storage.getAllTeams();
+      const team = (teams as any[]).find((t: any) => t.joinToken === token);
+      if (!team) return res.status(404).json({ message: "Invalid join link" });
+
+      // Find or create a player record for this user
+      const { players: playersTable } = await import("@shared/schema");
+      const [existingPlayer] = await db.select().from(playersTable).where(eq(playersTable.email, sessionUser.email)).limit(1);
+      let player = existingPlayer;
+      if (!player) {
+        const localUser = await storage.getLocalUser(sessionUser.id);
+        player = await storage.createPlayer({
+          name: `${localUser?.firstName || ""} ${localUser?.lastName || ""}`.trim() || sessionUser.username,
+          email: sessionUser.email,
+          isActive: true,
+        });
+      }
+
+      // Check if already a member
+      const teamPlayers = await storage.getPlayersByTeam(team.id);
+      const alreadyMember = (teamPlayers as any[]).some((p: any) => p.id === player.id);
+      if (alreadyMember) {
+        return res.json({ message: "Already a member of this team", teamId: team.id, teamName: team.name });
+      }
+
+      // Add to team
+      await storage.addPlayerToTeam(player.id, team.id, { isActive: true });
+
+      // Ensure role is player
+      const localUser = await storage.getLocalUser(sessionUser.id);
+      if (localUser && localUser.role === "manager") {
+        // keep manager role — they joined their own team
+      } else if (localUser) {
+        await storage.updateLocalUser(localUser.id, { role: "player" });
+      }
+
+      res.json({ message: `Joined ${team.name} successfully`, teamId: team.id, teamName: team.name });
+    } catch (error) {
+      console.error("Join team error:", error);
+      res.status(500).json({ message: "Failed to join team" });
     }
   });
 
