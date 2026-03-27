@@ -238,7 +238,11 @@ export const insertMatchSchema = createInsertSchema(matches).omit({ id: true }).
 export const insertInningsSchema = createInsertSchema(innings).omit({ id: true });
 export const insertBallSchema = createInsertSchema(balls).omit({ id: true });
 export const insertPlayerStatsSchema = createInsertSchema(playerStats).omit({ id: true });
-export const insertAvailabilityRequestSchema = createInsertSchema(availabilityRequests).omit({ id: true });
+export const insertAvailabilityRequestSchema = createInsertSchema(availabilityRequests).omit({ id: true }).extend({
+  requestDate: z.coerce.date(),
+  matchDate: z.coerce.date(),
+  deadline: z.coerce.date(),
+});
 export const insertAvailabilityResponseSchema = createInsertSchema(availabilityResponses).omit({ id: true, responseDate: true });
 export const insertPaymentSchema = z.object({
   playerId: z.number(),
