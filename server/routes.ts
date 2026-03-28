@@ -952,11 +952,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Determine if the session user is a player (players cannot change their response)
       let sessionIsPlayer = false;
+      let sessionPlayerRecord: any = null;
       if (req.session?.localUser) {
         const sessionUser = await storage.getLocalUser(req.session.localUser.id);
         sessionIsPlayer = sessionUser?.role === 'player';
+        if (sessionIsPlayer) {
+          // Find the player record linked to this user by email
+          const [found] = await db.select().from(players).where(eq(players.email, sessionUser!.email)).limit(1);
+          sessionPlayerRecord = found || null;
+        }
       }
 
+      // Players can only submit for their own player ID
+      if (sessionIsPlayer && sessionPlayerRecord && responseData.playerId !== sessionPlayerRecord.id) {
+        return res.status(403).json({ message: "You can only submit availability for yourself." });
+      }
+
+      // Players cannot change a response once submitted
       if (existing && sessionIsPlayer) {
         return res.status(403).json({ message: "You have already submitted your availability and cannot change it." });
       }

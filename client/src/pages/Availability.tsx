@@ -48,6 +48,11 @@ export default function Availability() {
     enabled: !!teamId,
   });
 
+  // Find the signed-in player's own record (matched by email)
+  const currentPlayer = (players as any[])?.find(
+    (p: any) => p.email === (user as any)?.email
+  );
+
   const { data: availabilityResponses } = useQuery({
     queryKey: [`/api/availability-responses`],
   });
@@ -450,18 +455,32 @@ export default function Availability() {
                   {players && players.length > 0 ? (
                     players.map((player: any) => {
                       const response = detailResponses.find((r: any) => r.playerId === player.id);
+                      const isOwnRow = currentPlayer?.id === player.id;
+                      // Manager can edit everyone; player can only edit their own row
+                      const canEdit = !isPlayer || isOwnRow;
+                      // Players cannot change a response once submitted
+                      const alreadyResponded = isPlayer && isOwnRow && !!response;
+
                       return (
                         <div key={player.id} className="flex items-center justify-between p-3 border rounded-md">
                           <div>
-                            <p className="font-medium">{player.name}</p>
-                            {response && (
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{player.name}</p>
+                              {isOwnRow && isPlayer && (
+                                <Badge variant="outline" className="text-xs">You</Badge>
+                              )}
+                            </div>
+                            {response ? (
                               <p className="text-xs text-muted-foreground">
                                 Responded {new Date(response.responseDate).toLocaleDateString()}
                               </p>
-                            )}
+                            ) : canEdit ? (
+                              <p className="text-xs text-muted-foreground">No response yet</p>
+                            ) : null}
                           </div>
                           <div className="flex items-center gap-2">
-                            {response && (
+                            {/* Show read-only badge when: other player's row, or player already responded */}
+                            {response && (!canEdit || alreadyResponded) && (
                               <Badge
                                 variant={
                                   response.status === 'available' ? 'default' :
@@ -472,25 +491,33 @@ export default function Availability() {
                                 {response.status.charAt(0).toUpperCase() + response.status.slice(1)}
                               </Badge>
                             )}
-                            <Select
-                              onValueChange={(value) =>
-                                recordResponseMutation.mutate({
-                                  requestId: selectedRequest.id,
-                                  playerId: player.id,
-                                  status: value,
-                                })
-                              }
-                              value={response?.status || ""}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Set status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="available">Available</SelectItem>
-                                <SelectItem value="unavailable">Unavailable</SelectItem>
-                                <SelectItem value="maybe">Maybe</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            {/* Show "Pending" badge for other players with no response */}
+                            {!response && !canEdit && (
+                              <Badge variant="outline" className="text-muted-foreground">Pending</Badge>
+                            )}
+                            {/* Show dropdown only for editable rows where response can still be changed */}
+                            {canEdit && !alreadyResponded && (
+                              <Select
+                                onValueChange={(value) =>
+                                  recordResponseMutation.mutate({
+                                    requestId: selectedRequest.id,
+                                    playerId: player.id,
+                                    status: value,
+                                  })
+                                }
+                                value={response?.status || ""}
+                                disabled={recordResponseMutation.isPending}
+                              >
+                                <SelectTrigger className="w-32">
+                                  <SelectValue placeholder="Set status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="available">Available</SelectItem>
+                                  <SelectItem value="unavailable">Unavailable</SelectItem>
+                                  <SelectItem value="maybe">Maybe</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
                           </div>
                         </div>
                       );
