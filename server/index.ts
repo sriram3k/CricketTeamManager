@@ -4,6 +4,30 @@ import { setupVite, serveStatic, log } from "./vite";
 import { ensureTables } from "./ensureTables";
 
 const app = express();
+
+// Allow Capacitor mobile app origins in addition to the standard web origin.
+// When using Capacitor's server.url (live server), this isn't strictly needed,
+// but it allows local development builds to also talk to this server.
+const allowedOrigins = [
+  "capacitor://localhost",   // iOS Capacitor
+  "http://localhost",        // Android emulator
+  "https://localhost",       // Capacitor iOS HTTPS
+  "http://localhost:5000",   // Local dev
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : []),
+];
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  }
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

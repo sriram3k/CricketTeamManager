@@ -21,6 +21,9 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      // sameSite "none" allows the cookie to be sent from the Capacitor mobile
+      // app (capacitor://localhost origin) when the webview calls the server.
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: sessionTtl,
     },
   });
