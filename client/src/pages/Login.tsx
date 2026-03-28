@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -11,13 +11,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { loginSchema, type LoginInput } from "@shared/schema";
-import { Trophy, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Trophy, Mail, Lock, Eye, EyeOff, Users } from "lucide-react";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string>("");
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const joinToken = params.get("joinToken") || "";
+  const teamName = params.get("teamName") || "";
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -43,16 +47,19 @@ export default function Login() {
       return response.json();
     },
     onSuccess: async () => {
-      // Invalidate and refetch user authentication state
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
+
       toast({
         title: "Login successful",
         description: "Welcome back to CrickIQ!",
       });
-      
-      // Navigate to dashboard using programmatic navigation
-      setLocation("/");
+
+      // If came from a join link, go to the join page to complete joining
+      if (joinToken) {
+        setLocation(`/join-team/${joinToken}`);
+      } else {
+        setLocation("/");
+      }
     },
     onError: (error: Error) => {
       setAuthError(error.message || "Login failed. Please try again.");
@@ -75,12 +82,22 @@ export default function Login() {
           <div className="text-center">
             <CardTitle className="text-xl">Welcome back</CardTitle>
             <CardDescription>
-              Sign in to your cricket management account
+              {joinToken && teamName
+                ? `Sign in to join ${teamName}`
+                : "Sign in to your cricket management account"}
             </CardDescription>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-6">
+          {joinToken && teamName && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <Users className="h-4 w-4 text-green-600 shrink-0" />
+              <p className="text-sm text-green-700 dark:text-green-400">
+                Sign in to join <strong>{teamName}</strong> as a player.
+              </p>
+            </div>
+          )}
           {/* Email/Password Login Form */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -166,7 +183,7 @@ export default function Login() {
             
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link href="/signup">
+              <Link href={joinToken ? `/signup?joinToken=${joinToken}&teamName=${encodeURIComponent(teamName)}` : "/signup"}>
                 <Button variant="link" className="p-0 h-auto text-sm">
                   Sign up
                 </Button>
