@@ -606,6 +606,13 @@ export class DatabaseStorage implements IStorage {
     return request;
   }
 
+  async deleteAvailabilityRequest(id: number): Promise<boolean> {
+    // Also delete all responses for this request
+    await db.delete(availabilityResponses).where(eq(availabilityResponses.requestId, id));
+    const result = await db.delete(availabilityRequests).where(eq(availabilityRequests.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   async getAvailabilityResponsesByRequest(requestId: number): Promise<AvailabilityResponse[]> {
     return await db.select().from(availabilityResponses).where(eq(availabilityResponses.requestId, requestId));
   }

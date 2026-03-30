@@ -744,6 +744,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/availability-requests/:id", async (req: any, res) => {
+    try {
+      if (!req.session?.localUser) return res.status(401).json({ message: "Unauthorized" });
+      const sessionUser = await storage.getLocalUser(req.session.localUser.id);
+      if (sessionUser?.role === 'player') return res.status(403).json({ message: "Only managers can delete availability requests." });
+      const deleted = await storage.deleteAvailabilityRequest(parseInt(req.params.id));
+      if (!deleted) return res.status(404).json({ message: "Request not found" });
+      res.json({ message: "Availability request deleted" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete availability request" });
+    }
+  });
+
   // Backfill availability requests for existing scheduled matches
   app.post("/api/teams/:teamId/backfill-availability", async (req, res) => {
     try {
