@@ -12,7 +12,7 @@ export default function TopBar() {
   const handleLogout = async () => {
     try {
       // Try local logout first
-      await apiRequest("/api/auth/logout", "POST", {});
+      await apiRequest("POST", "/api/auth/logout");
       
       // Clear query cache
       queryClient.clear();
