@@ -40,6 +40,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.updateLocalUser(fullUser.id, { teamId });
             }
           }
+          // For players with no teamId, look up via their player record
+          if (!teamId && fullUser.role === 'player') {
+            const playerRecord = await db.select().from(players)
+              .where(eq(players.email, fullUser.email)).limit(1);
+            if (playerRecord.length > 0) {
+              const playerTeams = await storage.getPlayerTeams(playerRecord[0].id);
+              if (playerTeams.length > 0) {
+                teamId = playerTeams[0].teamId;
+                await storage.updateLocalUser(fullUser.id, { teamId });
+              }
+            }
+          }
           return res.json({
             id: fullUser.id,
             email: fullUser.email,
@@ -105,48 +117,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash password
       const passwordHash = await bcrypt.hash(userData.password, 10);
       
-      // Check if user is signing up via invitation
+      // Check if user is signing up via invitation or join link
       const inviteToken = req.query.invite as string;
+      const joinToken = req.query.joinToken as string;
       let userRole = 'manager'; // Default role for direct signups
-      
+      let signupTeamId: number | null = null;
+
       if (inviteToken) {
-        // If signing up via invite, always assign 'player' role
         const invite = await storage.getPlayerInviteByToken(inviteToken);
         if (invite && invite.email === userData.email && invite.status === 'pending') {
-          userRole = 'player'; // Force player role for invited users
+          userRole = 'player';
+          signupTeamId = invite.teamId;
         }
+      } else if (joinToken) {
+        userRole = 'player';
       }
-      
+
       const user = await storage.createLocalUser({
         email: userData.email,
         username: userData.username,
         firstName: userData.firstName,
         lastName: userData.lastName,
         passwordHash,
-        role: userRole, // Explicitly set the role
+        role: userRole,
       });
 
-      // If user signed up via invitation, complete the invitation process
+      // Complete invite or join-link process and set teamId
       if (inviteToken) {
         const invite = await storage.getPlayerInviteByToken(inviteToken);
         if (invite && invite.email === userData.email && invite.status === 'pending') {
-          // Create player record
           const player = await storage.createPlayer({
             name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username,
             email: userData.email,
             preferredPosition: invite.position || null,
             isActive: true
           });
-
-          // Add player to team
           await storage.addPlayerToTeam(player.id, invite.teamId, {
             position: invite.position || null,
             isActive: true
           });
-
-          // Mark invitation as accepted
           await storage.updatePlayerInviteStatus(invite.id, 'accepted', new Date());
+          signupTeamId = invite.teamId;
         }
+      } else if (joinToken) {
+        const allTeams = await storage.getAllTeams();
+        const joinTeam = (allTeams as any[]).find((t: any) => t.joinToken === joinToken);
+        if (joinTeam) {
+          const player = await storage.createPlayer({
+            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username,
+            email: userData.email,
+            isActive: true,
+          });
+          await storage.addPlayerToTeam(player.id, joinTeam.id, { isActive: true });
+          signupTeamId = joinTeam.id;
+        }
+      }
+
+      // Persist teamId so the player can load their team data on next login
+      if (signupTeamId) {
+        await storage.updateLocalUser(user.id, { teamId: signupTeamId });
       }
 
       // Create session for the new user
@@ -830,9 +859,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/availability-responses", async (req, res) => {
+  app.post("/api/availability-responses", async (req: any, res) => {
     try {
       const responseData = insertAvailabilityResponseSchema.parse(req.body);
+
+      // RBAC: players can only submit for themselves
+      if (req.session?.localUser) {
+        const sessionUser = await storage.getLocalUser(req.session.localUser.id);
+        if (sessionUser?.role === 'player') {
+          const [playerRecord] = await db.select().from(players)
+            .where(eq(players.email, sessionUser.email)).limit(1);
+          if (!playerRecord || responseData.playerId !== playerRecord.id) {
+            return res.status(403).json({ message: "You can only submit availability for yourself." });
+          }
+        }
+      } else {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const response = await storage.createAvailabilityResponse(responseData);
       res.status(201).json(response);
     } catch (error) {
