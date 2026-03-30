@@ -207,8 +207,8 @@ export default function Availability() {
     return true;
   });
 
-  // For players: requests they haven't responded to yet (and not expired)
-  const pendingForMe = isPlayer && currentPlayer
+  // Requests the current user hasn't responded to yet (and not expired)
+  const pendingForMe = currentPlayer
     ? allRequests.filter(
         (r: any) => !myResponses[r.id] && new Date(r.deadline) >= now
       )
@@ -298,8 +298,8 @@ export default function Availability() {
         )}
       </div>
 
-      {/* Pending-for-me banner (players only) */}
-      {isPlayer && (pendingForMe as any[]).length > 0 && (
+      {/* Pending-for-me banner */}
+      {currentPlayer && (pendingForMe as any[]).length > 0 && (
         <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
           <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
           <div className="flex-1">
@@ -351,10 +351,10 @@ export default function Availability() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-muted-foreground">
-                  {isPlayer ? "My Pending" : "Total Requests"}
+                  {currentPlayer ? "My Pending" : "Total Requests"}
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {isPlayer
+                  {currentPlayer
                     ? (pendingForMe as any[]).length
                     : allRequests.length}
                 </p>
@@ -397,7 +397,7 @@ export default function Availability() {
               const isExpired = new Date(request.deadline) < now;
               const counts = getResponseCounts(request.id);
               const myStatus = myResponses[request.id];
-              const canStillRespond = isPlayer && currentPlayer && !myStatus && !isExpired;
+              const canStillRespond = !!currentPlayer && !myStatus && !isExpired;
 
               return (
                 <div key={request.id} className={`border rounded-lg p-4 ${isExpired ? "opacity-70" : ""}`}>
@@ -476,8 +476,8 @@ export default function Availability() {
                     </div>
                   </div>
 
-                  {/* Player quick-response inline buttons */}
-                  {isPlayer && currentPlayer && (
+                  {/* Quick-response inline buttons — shown for any user with a player record */}
+                  {currentPlayer && (
                     <div className="mb-3 p-3 bg-muted/50 rounded-md">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Your response</p>
                       {myStatus ? (
@@ -591,6 +591,7 @@ export default function Availability() {
                       const response = detailResponses.find((r: any) => r.playerId === player.id);
                       const isOwnRow = currentPlayer?.id === player.id;
                       const canEdit = !isPlayer || isOwnRow;
+                      // Players can only respond once on own row; managers can re-edit anyone
                       const alreadyResponded = isPlayer && isOwnRow && !!response;
                       const deadlinePassed = new Date(selectedRequest.deadline) < now;
 
@@ -599,7 +600,7 @@ export default function Availability() {
                           <div>
                             <div className="flex items-center gap-2">
                               <p className="font-medium">{player.name}</p>
-                              {isOwnRow && isPlayer && (
+                              {isOwnRow && currentPlayer && (
                                 <Badge variant="outline" className="text-xs">You</Badge>
                               )}
                             </div>

@@ -36,16 +36,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const managedTeams = await storage.getTeamsByManager(fullUser.id);
             if (managedTeams.length > 0) {
               teamId = managedTeams[0].id;
-              // Cache it on the user record
               await storage.updateLocalUser(fullUser.id, { teamId });
             }
           }
-          // For players with no teamId, look up via their player record
-          if (!teamId && fullUser.role === 'player') {
-            const playerRecord = await db.select().from(players)
+          // Still no teamId? Check if this account has a player record in a team
+          // (handles manually-added players and users with any role)
+          if (!teamId) {
+            const [playerRecord] = await db.select().from(players)
               .where(eq(players.email, fullUser.email)).limit(1);
-            if (playerRecord.length > 0) {
-              const playerTeams = await storage.getPlayerTeams(playerRecord[0].id);
+            if (playerRecord) {
+              const playerTeams = await storage.getPlayerTeams(playerRecord.id);
               if (playerTeams.length > 0) {
                 teamId = playerTeams[0].teamId;
                 await storage.updateLocalUser(fullUser.id, { teamId });
