@@ -1,4 +1,4 @@
-name: cricketiq
+name: crickiq
 region: nyc
 
 services:
@@ -7,21 +7,27 @@ services:
       repo: sriram3k/cricketteammanager
       branch: main
       deploy_on_push: true
-    build_command: npm install && npm run build
-    run_command: sh scripts/start.sh
-    instance_size_slug: basic-xs
+    build_command: npm ci && npm run build
+    run_command: npm run start
+    http_port: 5000
+    instance_size_slug: apps-s-1vcpu-0.5gb
     instance_count: 1
+    routes:
+      - path: /
+    health_check:
+      http_path: /api/auth/user
+      initial_delay_seconds: 10
     envs:
       - key: NODE_ENV
         value: production
         scope: RUN_AND_BUILD_TIME
+      - key: PORT
+        value: "5000"
+        scope: RUN_AND_BUILD_TIME
       - key: DATABASE_URL
-        scope: RUN_TIME
-        type: SECRET
+        value: ${db.DATABASE_URL}
+        scope: RUN_AND_BUILD_TIME
       - key: SESSION_SECRET
-        scope: RUN_TIME
-        type: SECRET
-      - key: APP_URL
         scope: RUN_TIME
         type: SECRET
       - key: SENDGRID_API_KEY
@@ -35,5 +41,6 @@ databases:
   - name: db
     engine: PG
     version: "16"
-    size: db-s-1vcpu-1gb
+    size: db-s-dev-database
     num_nodes: 1
+    production: false
