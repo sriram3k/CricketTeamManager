@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,21 +22,22 @@ export default function PlayerDashboard() {
     queryKey: ["/api/auth/user"],
   });
 
-  const { data: allMatches = [] } = useQuery({
-    queryKey: ["/api/matches"],
-  });
+  const teamId = (user as any)?.teamId || 0;
 
-  // Filter matches for the current player's team
-  const matches = allMatches.filter((match: any) => 
-    currentPlayer?.teamId && (match.homeTeamId === currentPlayer.teamId || match.awayTeamId === currentPlayer.teamId)
-  );
-
+  // Find current player record by email
   const { data: playerData } = useQuery({
-    queryKey: ["/api/players"],
-    enabled: !!user?.email,
+    queryKey: [`/api/teams/${teamId}/players/active`],
+    enabled: !!teamId,
   });
 
-  const currentPlayer = playerData?.find((p: any) => p.email === user?.email);
+  const currentPlayer = (playerData as any[])?.find((p: any) => p.email === (user as any)?.email);
+
+  const { data: matchData = [] } = useQuery({
+    queryKey: [`/api/matches/team/${teamId}`],
+    enabled: !!teamId,
+  });
+
+  const matches = matchData as any[];
 
   const { data: payments = [] } = useQuery({
     queryKey: [`/api/players/${currentPlayer?.id}/payments`],
@@ -45,7 +45,8 @@ export default function PlayerDashboard() {
   });
 
   const { data: availabilityRequests = [] } = useQuery({
-    queryKey: ["/api/availability"],
+    queryKey: [`/api/teams/${teamId}/availability-requests`],
+    enabled: !!teamId,
   });
 
   const respondToAvailabilityMutation = useMutation({
@@ -53,11 +54,10 @@ export default function PlayerDashboard() {
       if (!currentPlayer) {
         throw new Error('Player not found');
       }
-      
-      return apiRequest("/api/availability-responses", "POST", { 
-        requestId, 
+      return apiRequest("POST", "/api/availability-responses", {
+        requestId,
         playerId: currentPlayer.id,
-        status: response 
+        status: response
       });
     },
     onSuccess: () => {
@@ -65,7 +65,7 @@ export default function PlayerDashboard() {
         title: "Response submitted",
         description: "Your availability response has been recorded.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/availability"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/availability-requests`] });
     },
     onError: () => {
       toast({

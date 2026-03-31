@@ -89,7 +89,7 @@ export default function Availability() {
     resolver: zodResolver(availabilityFormSchema),
     defaultValues: {
       teamId,
-      matchId: null,
+      matchId: undefined,
       requestDate: "",
       matchDate: "",
       venue: "",
@@ -192,7 +192,7 @@ export default function Availability() {
       requestDate: new Date().toISOString(),
       matchDate: new Date(data.matchDate).toISOString(),
       deadline: new Date(data.deadline).toISOString(),
-      matchId: null,
+      matchId: undefined,
     });
   };
 

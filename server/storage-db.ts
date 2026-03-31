@@ -14,7 +14,8 @@ import {
   localUsers
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, inArray, sql } from "drizzle-orm";
+import { eq, and, or, desc, count, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { IStorage } from "./storage";
 
 export class DatabaseStorage implements IStorage {
@@ -436,9 +437,7 @@ export class DatabaseStorage implements IStorage {
 
   async getMatchesByTeam(teamId: number): Promise<Match[]> {
     return await db.select().from(matches).where(
-      and(
-        eq(matches.homeTeamId, teamId)
-      )
+      or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId))
     );
   }
 
@@ -455,13 +454,15 @@ export class DatabaseStorage implements IStorage {
   async deleteMatch(id: number): Promise<boolean> {
     try {
       const result = await db.delete(matches).where(eq(matches.id, id));
-      return true;
+      return (result.rowCount || 0) > 0;
     } catch (error) {
       return false;
     }
   }
 
   async getRecentMatches(teamId: number, limit = 10): Promise<any[]> {
+    const homeTeams = alias(teams, "home_team");
+    const awayTeams = alias(teams, "away_team");
     const result = await db.select({
       id: matches.id,
       homeTeamId: matches.homeTeamId,
@@ -475,15 +476,16 @@ export class DatabaseStorage implements IStorage {
       result: matches.result,
       winnerTeamId: matches.winnerTeamId,
       matchFee: matches.matchFee,
-      homeTeamName: teams.name,
-      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END)`
+      homeTeamName: homeTeams.name,
+      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, ${awayTeams.name}, 'Opponent')`
     })
     .from(matches)
-    .leftJoin(teams, eq(matches.homeTeamId, teams.id))
-    .where(eq(matches.homeTeamId, teamId))
+    .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
+    .where(or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId)))
     .orderBy(desc(matches.date))
     .limit(limit);
-    
+
     return result;
   }
 
@@ -492,6 +494,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUpcomingMatches(teamId: number): Promise<any[]> {
+    const homeTeams = alias(teams, "home_team");
+    const awayTeams = alias(teams, "away_team");
     const result = await db.select({
       id: matches.id,
       homeTeamId: matches.homeTeamId,
@@ -505,14 +509,18 @@ export class DatabaseStorage implements IStorage {
       result: matches.result,
       winnerTeamId: matches.winnerTeamId,
       matchFee: matches.matchFee,
-      homeTeamName: teams.name,
-      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, CASE WHEN ${matches.awayTeamId} = 2 THEN 'Team Spirits' WHEN ${matches.awayTeamId} = 3 THEN 'Kolkata Titans' ELSE 'Opponent Team' END)`
+      homeTeamName: homeTeams.name,
+      awayTeamName: sql<string>`COALESCE(${matches.opponentName}, ${awayTeams.name}, 'Opponent')`
     })
     .from(matches)
-    .leftJoin(teams, eq(matches.homeTeamId, teams.id))
-    .where(and(eq(matches.homeTeamId, teamId), eq(matches.status, "scheduled")))
+    .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
+    .where(and(
+      or(eq(matches.homeTeamId, teamId), eq(matches.awayTeamId, teamId)),
+      eq(matches.status, "scheduled")
+    ))
     .orderBy(matches.date);
-    
+
     return result;
   }
 
