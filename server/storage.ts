@@ -97,6 +97,10 @@ export interface IStorage {
   createPlayerInvite(invite: InsertPlayerInvite & { token: string; expiresAt: Date }): Promise<PlayerInvite>;
   updatePlayerInviteStatus(id: number, status: string, acceptedAt?: Date): Promise<PlayerInvite | undefined>;
   deleteExpiredInvites(): Promise<void>;
+
+  // Squad Selection
+  getMatchSquad(matchId: number): Promise<any[]>;
+  saveMatchSquad(matchId: number, playerIds: number[]): Promise<void>;
 }
 
 export class MemStorage implements IStorage {

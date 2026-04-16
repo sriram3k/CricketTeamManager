@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import bcrypt from "bcrypt";
 import { DatabaseStorage } from "./storage-db";
+import { sendAvailabilityRequestEmail } from "./emailService";
 
 const storage = new DatabaseStorage();
 import { setupAuth, isAuthenticated } from "./replitAuth";
@@ -560,8 +561,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(match);
   });
 
-  app.post("/api/matches", async (req, res) => {
+  app.post("/api/matches", async (req: any, res) => {
     try {
+      if (!req.session?.localUser) return res.status(401).json({ message: "Unauthorized" });
+      const sessionUser = await storage.getLocalUser(req.session.localUser.id);
+      if (sessionUser?.role === 'player') return res.status(403).json({ message: "Only managers can create matches." });
+
       const matchData = insertMatchSchema.parse(req.body);
       const match = await storage.createMatch(matchData);
       
@@ -591,8 +596,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/matches/:id", async (req, res) => {
+  app.put("/api/matches/:id", async (req: any, res) => {
     try {
+      if (!req.session?.localUser) return res.status(401).json({ message: "Unauthorized" });
+      const sessionUserPut = await storage.getLocalUser(req.session.localUser.id);
+      if (sessionUserPut?.role === 'player') return res.status(403).json({ message: "Only managers can update matches." });
+
       // Transform date strings to Date objects
       const updates = { ...req.body };
       if (updates.date && typeof updates.date === 'string') {
@@ -640,13 +649,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/matches/:id", async (req, res) => {
+  app.delete("/api/matches/:id", async (req: any, res) => {
     try {
+      if (!req.session?.localUser) return res.status(401).json({ message: "Unauthorized" });
+      const sessionUserDel = await storage.getLocalUser(req.session.localUser.id);
+      if (sessionUserDel?.role === 'player') return res.status(403).json({ message: "Only managers can delete matches." });
+
       const success = await storage.deleteMatch(parseInt(req.params.id));
       if (!success) return res.status(404).json({ message: "Match not found" });
       res.json({ message: "Match deleted successfully" });
     } catch (error) {
       res.status(400).json({ message: "Failed to delete match", error });
+    }
+  });
+
+  // Squad selection
+  app.get("/api/matches/:matchId/squad", async (req, res) => {
+    try {
+      const squad = await storage.getMatchSquad(parseInt(req.params.matchId));
+      res.json(squad);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch squad", error });
+    }
+  });
+
+  app.post("/api/matches/:matchId/squad", async (req: any, res) => {
+    try {
+      if (!req.session?.localUser) return res.status(401).json({ message: "Unauthorized" });
+      const sessionUser = await storage.getLocalUser(req.session.localUser.id);
+      if (sessionUser?.role === 'player') return res.status(403).json({ message: "Only managers can select the squad." });
+
+      const { playerIds } = req.body;
+      if (!Array.isArray(playerIds)) return res.status(400).json({ message: "playerIds must be an array" });
+      await storage.saveMatchSquad(parseInt(req.params.matchId), playerIds);
+      const squad = await storage.getMatchSquad(parseInt(req.params.matchId));
+      res.json(squad);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to save squad", error });
     }
   });
 
@@ -755,6 +794,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const requestData = insertAvailabilityRequestSchema.parse(req.body);
       const request = await storage.createAvailabilityRequest(requestData);
+
+      // Send email notifications to active team players (fire-and-forget)
+      (async () => {
+        try {
+          const teamPlayers = await storage.getActivePlayersByTeam(requestData.teamId);
+          const team = await storage.getTeam(requestData.teamId);
+          const teamName = team?.name || 'Your team';
+          const appUrl = process.env.APP_URL || `https://${req.headers.host}`;
+
+          await Promise.allSettled(
+            teamPlayers
+              .filter((p: any) => p.email)
+              .map((p: any) =>
+                sendAvailabilityRequestEmail({
+                  to: p.email,
+                  playerName: p.name || p.email,
+                  teamName,
+                  opponent: requestData.opponent,
+                  matchDate: new Date(requestData.matchDate),
+                  venue: requestData.venue,
+                  deadline: new Date(requestData.deadline),
+                  message: requestData.message,
+                  appUrl,
+                })
+              )
+          );
+        } catch (emailErr) {
+          console.error('Failed to send availability emails:', emailErr);
+        }
+      })();
+
       res.status(201).json(request);
     } catch (error) {
       res.status(400).json({ message: "Invalid availability request data", error });

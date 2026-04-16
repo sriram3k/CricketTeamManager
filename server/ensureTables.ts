@@ -238,6 +238,20 @@ export async function ensureTables() {
     ALTER TABLE "teams" ADD COLUMN IF NOT EXISTS "join_token" text;
   `);
 
+  // Add match_squads table for squad selection per match
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS "match_squads" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "match_id" integer NOT NULL,
+      "player_id" integer NOT NULL,
+      "is_playing" boolean DEFAULT true,
+      "batting_order" integer,
+      "role" text,
+      "created_at" timestamp DEFAULT now(),
+      CONSTRAINT "match_squads_match_player_unique" UNIQUE("match_id", "player_id")
+    );
+  `);
+
   // Make players.team_id nullable — old schema had it NOT NULL which blocks Drizzle INSERTs
   // (Drizzle schema no longer includes team_id in players; teams are tracked via player_teams)
   await pool.query(`

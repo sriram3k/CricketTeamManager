@@ -7,6 +7,7 @@ import {
   Target,
   Users,
   CalendarCheck,
+  Calendar,
   CreditCard,
   FileText,
   TrendingUp,
@@ -47,11 +48,19 @@ const navigation = [
     dataTour: "players",
     roles: ["manager"]
   },
-  { 
-    name: "Availability", 
+  {
+    name: "Schedule",
+    description: "View & manage match schedule",
+    href: "/schedule",
+    icon: Calendar,
+    dataTour: "schedule",
+    roles: ["manager", "player"]
+  },
+  {
+    name: "Availability",
     description: "Player availability for matches",
-    href: "/availability", 
-    icon: CalendarCheck, 
+    href: "/availability",
+    icon: CalendarCheck,
     dataTour: "availability",
     roles: ["manager", "player"]
   },

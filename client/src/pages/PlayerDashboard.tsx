@@ -12,7 +12,10 @@ import {
   Clock,
   AlertCircle,
   User,
-  Trophy
+  Trophy,
+  TrendingUp,
+  Target,
+  Activity
 } from "lucide-react";
 
 export default function PlayerDashboard() {
@@ -47,6 +50,11 @@ export default function PlayerDashboard() {
   const { data: availabilityRequests = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
     enabled: !!teamId,
+  });
+
+  const { data: playerStats = [] } = useQuery({
+    queryKey: [`/api/players/${currentPlayer?.id}/stats`],
+    enabled: !!currentPlayer?.id,
   });
 
   const respondToAvailabilityMutation = useMutation({
@@ -98,8 +106,28 @@ export default function PlayerDashboard() {
     },
   });
 
+  // Aggregate career stats from all match stats
+  const careerStats = (playerStats as any[]).reduce(
+    (acc, s) => ({
+      matches: acc.matches + 1,
+      runs: acc.runs + (s.runsScored || 0),
+      ballsFaced: acc.ballsFaced + (s.ballsFaced || 0),
+      fours: acc.fours + (s.fours || 0),
+      sixes: acc.sixes + (s.sixes || 0),
+      wickets: acc.wickets + (s.wicketsTaken || 0),
+      ballsBowled: acc.ballsBowled + (s.ballsBowled || 0),
+      runsConceded: acc.runsConceded + (s.runsConceded || 0),
+      catches: acc.catches + (s.catches || 0),
+    }),
+    { matches: 0, runs: 0, ballsFaced: 0, fours: 0, sixes: 0, wickets: 0, ballsBowled: 0, runsConceded: 0, catches: 0 }
+  );
+  const battingAvg = careerStats.matches > 0 ? (careerStats.runs / careerStats.matches).toFixed(1) : '0.0';
+  const strikeRate = careerStats.ballsFaced > 0 ? ((careerStats.runs / careerStats.ballsFaced) * 100).toFixed(1) : '0.0';
+  const bowlingAvg = careerStats.wickets > 0 ? (careerStats.runsConceded / careerStats.wickets).toFixed(1) : '-';
+  const economy = careerStats.ballsBowled > 0 ? ((careerStats.runsConceded / careerStats.ballsBowled) * 6).toFixed(1) : '-';
+
   // Filter for player's outstanding payments
-  const outstandingPayments = payments.filter((payment: any) => 
+  const outstandingPayments = payments.filter((payment: any) =>
     payment.status === "pending" || payment.status === "overdue"
   );
 
@@ -331,6 +359,74 @@ export default function PlayerDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Performance Stats */}
+        {careerStats.matches > 0 && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                My Performance Stats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {/* Batting */}
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <Activity className="h-6 w-6 text-green-600" />
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Batting</p>
+                  <p className="text-2xl font-bold">{careerStats.runs}</p>
+                  <p className="text-xs text-gray-500">Total Runs</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <Target className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg / SR</p>
+                  <p className="text-2xl font-bold">{battingAvg}</p>
+                  <p className="text-xs text-gray-500">SR: {strikeRate}</p>
+                </div>
+                {/* Bowling */}
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <Trophy className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Bowling</p>
+                  <p className="text-2xl font-bold">{careerStats.wickets}</p>
+                  <p className="text-xs text-gray-500">Wickets</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex justify-center mb-2">
+                    <CheckCircle className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Economy / Avg</p>
+                  <p className="text-2xl font-bold">{economy}</p>
+                  <p className="text-xs text-gray-500">Avg: {bowlingAvg}</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t flex justify-around text-center">
+                <div>
+                  <p className="text-lg font-bold">{careerStats.matches}</p>
+                  <p className="text-xs text-gray-500">Matches</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{careerStats.fours}</p>
+                  <p className="text-xs text-gray-500">Fours</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{careerStats.sixes}</p>
+                  <p className="text-xs text-gray-500">Sixes</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">{careerStats.catches}</p>
+                  <p className="text-xs text-gray-500">Catches</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

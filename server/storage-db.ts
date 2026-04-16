@@ -1,7 +1,7 @@
 import {
-  users, teams, players, playerTeams, matches, 
+  users, teams, players, playerTeams, matches,
   innings as inningsTable, balls, playerStats,
-  availabilityRequests, availabilityResponses, payments, invoices, playerInvites,
+  availabilityRequests, availabilityResponses, payments, invoices, playerInvites, matchSquads,
   type User, type UpsertUser, type Team, type InsertTeam,
   type Player, type InsertPlayer, type PlayerTeam, type InsertPlayerTeam,
   type Match, type InsertMatch,
@@ -739,5 +739,41 @@ export class DatabaseStorage implements IStorage {
 
   async deleteExpiredInvites(): Promise<void> {
     await db.delete(playerInvites).where(sql`${playerInvites.expiresAt} < NOW()`);
+  }
+
+  async getMatchSquad(matchId: number): Promise<any[]> {
+    return await db
+      .select({
+        id: matchSquads.id,
+        matchId: matchSquads.matchId,
+        playerId: matchSquads.playerId,
+        isPlaying: matchSquads.isPlaying,
+        battingOrder: matchSquads.battingOrder,
+        role: matchSquads.role,
+        playerName: players.name,
+        playerEmail: players.email,
+        preferredPosition: players.preferredPosition,
+        battingStyle: players.battingStyle,
+        bowlingStyle: players.bowlingStyle,
+      })
+      .from(matchSquads)
+      .leftJoin(players, eq(matchSquads.playerId, players.id))
+      .where(eq(matchSquads.matchId, matchId))
+      .orderBy(sql`${matchSquads.battingOrder} NULLS LAST, ${matchSquads.id}`);
+  }
+
+  async saveMatchSquad(matchId: number, playerIds: number[]): Promise<void> {
+    // Delete existing squad for this match
+    await db.delete(matchSquads).where(eq(matchSquads.matchId, matchId));
+    // Insert new squad
+    if (playerIds.length > 0) {
+      const values = playerIds.map((playerId, i) => ({
+        matchId,
+        playerId,
+        battingOrder: i + 1,
+        isPlaying: true,
+      }));
+      await db.insert(matchSquads).values(values);
+    }
   }
 }

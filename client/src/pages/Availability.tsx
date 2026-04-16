@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -13,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { insertAvailabilityRequestSchema } from "@shared/schema";
-import { Plus, Calendar, Users, CheckCircle, XCircle, Clock, AlertCircle, Trash2 } from "lucide-react";
+import { Plus, Calendar, Users, CheckCircle, XCircle, Clock, AlertCircle, Trash2, Shield } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +35,8 @@ export default function Availability() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [detailResponses, setDetailResponses] = useState<any[]>([]);
   const [filterTab, setFilterTab] = useState<FilterTab>("active");
+  const [squadMatchId, setSquadMatchId] = useState<number | null>(null);
+  const [selectedSquadIds, setSelectedSquadIds] = useState<Set<number>>(new Set());
   const { user } = useAuth();
   const { toast } = useToast();
   const teamId = (user as any)?.teamId || 0;
@@ -59,8 +62,19 @@ export default function Availability() {
     queryKey: [`/api/availability-responses`],
   });
 
+  const { data: currentSquad = [] } = useQuery({
+    queryKey: [`/api/matches/${squadMatchId}/squad`],
+    enabled: !!squadMatchId,
+  });
+
   // Track quick-response state per request for the current player
   const [myResponses, setMyResponses] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if ((currentSquad as any[]).length > 0) {
+      setSelectedSquadIds(new Set((currentSquad as any[]).map((s: any) => s.playerId)));
+    }
+  }, [(currentSquad as any[]).length]);
 
   useEffect(() => {
     if (!currentPlayer?.id || !(availabilityRequests as any[])?.length) return;
@@ -104,7 +118,7 @@ export default function Availability() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/availability-requests`] });
       setIsDialogOpen(false);
-      form.reset({ teamId, matchId: null, requestDate: "", matchDate: "", venue: "", opponent: "", deadline: "", message: "" });
+      form.reset({ teamId, matchId: undefined, requestDate: "", matchDate: "", venue: "", opponent: "", deadline: "", message: "" });
       toast({ title: "Request created", description: "Availability request sent to players." });
     },
     onError: (error: any) => {
@@ -145,10 +159,29 @@ export default function Availability() {
     },
   });
 
+  const saveSquadMutation = useMutation({
+    mutationFn: (matchId: number) =>
+      apiRequest("POST", `/api/matches/${matchId}/squad`, { playerIds: Array.from(selectedSquadIds) }),
+    onSuccess: () => {
+      toast({ title: "Squad saved", description: "Playing XI has been confirmed." });
+      if (squadMatchId) queryClient.invalidateQueries({ queryKey: [`/api/matches/${squadMatchId}/squad`] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save squad.", variant: "destructive" });
+    },
+  });
+
   const handleViewDetails = async (request: any) => {
     setSelectedRequest(request);
     setDetailResponses([]);
     setIsDetailsDialogOpen(true);
+    // If manager and request is for a specific match, load squad
+    if (!isPlayer && request.matchId) {
+      setSquadMatchId(request.matchId);
+    } else {
+      setSquadMatchId(null);
+      setSelectedSquadIds(new Set());
+    }
     try {
       const res = await fetch(`/api/availability-requests/${request.id}/responses`, {
         credentials: "include",
@@ -580,6 +613,65 @@ export default function Availability() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Message</p>
                   <p className="text-sm bg-muted p-3 rounded-md">{selectedRequest.message}</p>
+                </div>
+              )}
+
+              {/* Squad Selection — managers only, for requests linked to a match */}
+              {!isPlayer && squadMatchId && (
+                <div className="border rounded-lg p-4 bg-muted/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Playing XI Selection
+                    </h3>
+                    <Button
+                      size="sm"
+                      disabled={saveSquadMutation.isPending}
+                      onClick={() => saveSquadMutation.mutate(squadMatchId)}
+                    >
+                      Save Squad ({selectedSquadIds.size})
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Select the players who will play. Available players are pre-checked.
+                  </p>
+                  <div className="space-y-2">
+                    {(players as any[])?.map((player: any) => {
+                      const response = detailResponses.find((r: any) => r.playerId === player.id);
+                      const isAvailable = response?.status === "available";
+                      const checked = selectedSquadIds.has(player.id);
+                      return (
+                        <div key={player.id} className="flex items-center gap-3">
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={(val) => {
+                              setSelectedSquadIds(prev => {
+                                const next = new Set(prev);
+                                if (val) next.add(player.id);
+                                else next.delete(player.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <span className="text-sm flex-1">{player.name}</span>
+                          {response && (
+                            <Badge
+                              variant={
+                                isAvailable ? "default" :
+                                response.status === "unavailable" ? "destructive" : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {response.status}
+                            </Badge>
+                          )}
+                          {!response && (
+                            <Badge variant="outline" className="text-xs">No response</Badge>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

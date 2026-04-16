@@ -15,6 +15,7 @@ import Availability from "@/pages/Availability";
 import Payments from "@/pages/Payments";
 import Invoices from "@/pages/Invoices";
 import Analytics from "@/pages/Analytics";
+import Schedule from "@/pages/Schedule";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -66,6 +67,7 @@ function Router() {
           // Player routes - restricted access
           <>
             <Route path="/" component={PlayerDashboard} />
+            <Route path="/schedule" component={Schedule} />
             <Route path="/availability" component={Availability} />
             <Route path="/payments" component={Payments} />
             <Route component={NotFound} />
@@ -74,6 +76,7 @@ function Router() {
           // Manager routes - full access
           <>
             <Route path="/" component={Dashboard} />
+            <Route path="/schedule" component={Schedule} />
             <Route path="/live-scoring" component={LiveScoring} />
             <Route path="/team-management" component={TeamManagement} />
             <Route path="/player-management" component={PlayerManagement} />

@@ -199,6 +199,17 @@ export const invoices = pgTable("invoices", {
   corporateId: integer("corporate_id").notNull(),
 });
 
+// Match squad selection table
+export const matchSquads = pgTable("match_squads", {
+  id: serial("id").primaryKey(),
+  matchId: integer("match_id").notNull(),
+  playerId: integer("player_id").notNull(),
+  isPlaying: boolean("is_playing").default(true),
+  battingOrder: integer("batting_order"),
+  role: text("role"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Player invitations table
 export const playerInvites = pgTable("player_invites", {
   id: serial("id").primaryKey(),
@@ -253,13 +264,14 @@ export const insertPaymentSchema = z.object({
   paymentMethod: z.string().optional(),
 });
 export const insertInvoiceSchema = createInsertSchema(invoices).omit({ id: true, issueDate: true });
-export const insertPlayerInviteSchema = createInsertSchema(playerInvites).omit({ 
-  id: true, 
-  createdAt: true, 
+export const insertPlayerInviteSchema = createInsertSchema(playerInvites).omit({
+  id: true,
+  createdAt: true,
   acceptedAt: true,
   token: true,
   expiresAt: true
 });
+export const insertMatchSquadSchema = createInsertSchema(matchSquads).omit({ id: true, createdAt: true });
 
 // Types for main entities
 export type Team = typeof teams.$inferSelect;
@@ -286,6 +298,8 @@ export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = z.infer<typeof insertInvoiceSchema>;
 export type PlayerInvite = typeof playerInvites.$inferSelect;
 export type InsertPlayerInvite = z.infer<typeof insertPlayerInviteSchema>;
+export type MatchSquad = typeof matchSquads.$inferSelect;
+export type InsertMatchSquad = z.infer<typeof insertMatchSquadSchema>;
 
 // Database Relations
 export const usersRelations = relations(users, ({ many }) => ({
