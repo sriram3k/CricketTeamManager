@@ -8,11 +8,8 @@ import {
   Users,
   CalendarCheck,
   Calendar,
-  CreditCard,
-  FileText,
   TrendingUp,
   BarChart3,
-  Zap
 } from "lucide-react";
 
 const navigation = [
@@ -64,23 +61,7 @@ const navigation = [
     dataTour: "availability",
     roles: ["manager", "player"]
   },
-  { 
-    name: "Payments", 
-    description: "Match fees & player payments",
-    href: "/payments", 
-    icon: CreditCard, 
-    dataTour: "payments",
-    roles: ["manager", "player"]
-  },
-  { 
-    name: "Invoices", 
-    description: "Corporate billing & invoices",
-    href: "/invoices", 
-    icon: FileText, 
-    dataTour: "invoices",
-    roles: ["manager"]
-  },
-  { 
+  {
     name: "Analytics", 
     description: "Performance insights & statistics",
     href: "/analytics", 

@@ -4,7 +4,7 @@ import {
   BarChart3,
   Target,
   Users,
-  CreditCard,
+  CalendarCheck,
   TrendingUp
 } from "lucide-react";
 
@@ -12,7 +12,7 @@ const mobileNavigation = [
   { name: "Overview", href: "/", icon: BarChart3 },
   { name: "Live", href: "/live-scoring", icon: Target },
   { name: "Squad", href: "/player-management", icon: Users },
-  { name: "Fees", href: "/payments", icon: CreditCard },
+  { name: "Availability", href: "/availability", icon: CalendarCheck },
   { name: "Stats", href: "/analytics", icon: TrendingUp },
 ];
 

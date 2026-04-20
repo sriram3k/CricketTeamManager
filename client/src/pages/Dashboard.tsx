@@ -20,7 +20,6 @@ import {
   Trophy,
   Users,
   Calendar,
-  DollarSign,
   Target,
   BarChart3,
   Play,
@@ -68,11 +67,6 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/recent`] });
     queryClient.invalidateQueries({ queryKey: [`/api/teams/${teamId}/matches/upcoming`] });
   }, [teamId]);
-
-  const { data: pendingPayments = [] } = useQuery({
-    queryKey: [`/api/teams/${teamId}/payments/pending`],
-    enabled: !!teamId,
-  });
 
   const { data: availabilityRequests = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
@@ -331,19 +325,6 @@ export default function Dashboard() {
             </Card>
           </Link>
           
-          <Link href="/payments">
-            <Card className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-orange-500/50">
-              <div className="flex items-center space-x-3">
-                <div className="p-3 bg-orange-500/10 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">Payments</h3>
-                  <p className="text-xs text-muted-foreground">Track finances</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
         </div>
       </div>
 
@@ -382,16 +363,6 @@ export default function Dashboard() {
           </div>
         </Card>
         
-        <Card className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pending Payments</p>
-              <p className="text-2xl font-bold text-red-600">{stats?.pendingPayments || 0}</p>
-              <p className="text-xs text-muted-foreground mt-1">Require attention</p>
-            </div>
-            <DollarSign className="h-8 w-8 text-red-600" />
-          </div>
-        </Card>
       </div>
 
       {/* Main Content Grid */}
@@ -589,12 +560,6 @@ export default function Dashboard() {
                   <Button variant="ghost" className="w-full justify-start">
                     <BarChart3 className="h-4 w-4 mr-2" />
                     Performance Analytics
-                  </Button>
-                </Link>
-                <Link href="/invoices">
-                  <Button variant="ghost" className="w-full justify-start">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    Invoices & Billing
                   </Button>
                 </Link>
                 <Link href="/live-scoring">

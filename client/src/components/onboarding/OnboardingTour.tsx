@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, ChevronLeft, ChevronRight, Check, Target, Users, Calendar, CreditCard, FileText, BarChart3 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Check, Target, Users, Calendar, BarChart3 } from "lucide-react";
 
 interface TourStep {
   id: string;
@@ -60,22 +60,6 @@ const tourSteps: TourStep[] = [
     content: 'Request player availability for matches and track responses from your team.',
     target: '[data-tour="availability"]',
     icon: Calendar,
-    position: 'right'
-  },
-  {
-    id: 'payments',
-    title: 'Match Fees',
-    content: 'Track player payments for matches, manage pending fees, and payment history.',
-    target: '[data-tour="payments"]',
-    icon: CreditCard,
-    position: 'right'
-  },
-  {
-    id: 'invoices',
-    title: 'Club Invoices',
-    content: 'Generate and manage invoices for corporate matches and team expenses.',
-    target: '[data-tour="invoices"]',
-    icon: FileText,
     position: 'right'
   },
   {

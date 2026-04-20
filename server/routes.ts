@@ -9,13 +9,13 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { registerInviteRoutes } from "./inviteRoutes";
 import { z } from "zod";
 import { db } from "./db";
-import { players, payments } from "@shared/schema";
+import { players } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   insertUserSchema, insertTeamSchema, insertPlayerSchema, insertMatchSchema,
   insertInningsSchema, insertBallSchema, insertPlayerStatsSchema,
   insertAvailabilityRequestSchema, insertAvailabilityResponseSchema,
-  insertPaymentSchema, insertInvoiceSchema, loginSchema, signupSchema, forgotPasswordSchema
+  loginSchema, signupSchema, forgotPasswordSchema
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -960,132 +960,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       parseInt(req.params.playerId)
     );
     res.json(response);
-  });
-
-  // Payments
-  app.get("/api/players/:playerId/payments", async (req, res) => {
-    const payments = await storage.getPaymentsByPlayer(parseInt(req.params.playerId));
-    res.json(payments);
-  });
-
-  app.get("/api/matches/:matchId/payments", async (req, res) => {
-    const payments = await storage.getPaymentsByMatch(parseInt(req.params.matchId));
-    res.json(payments);
-  });
-
-  app.get("/api/teams/:teamId/payments/pending", async (req, res) => {
-    const payments = await storage.getPendingPaymentsByTeam(parseInt(req.params.teamId));
-    res.json(payments);
-  });
-
-  app.get("/api/payments", async (req: any, res) => {
-    try {
-      // Check for local user session
-      if (req.session?.localUser) {
-        const localUser = await storage.getLocalUser(req.session.localUser.id);
-        if (localUser?.role === 'player') {
-          // For players, only show their own payments
-          const player = await db.select().from(players).where(eq(players.email, localUser.email)).limit(1);
-          if (player.length > 0) {
-            const playerPayments = await storage.getPaymentsByPlayer(player[0].id);
-            return res.json(playerPayments);
-          }
-          return res.json([]);
-        }
-      }
-      
-      // For managers, show all payments for their teams
-      const allPayments = await db.select().from(payments);
-      res.json(allPayments);
-    } catch (error) {
-      console.error("Error fetching payments:", error);
-      res.status(500).json({ message: "Failed to fetch payments" });
-    }
-  });
-
-  app.post("/api/payments", async (req: any, res) => {
-    try {
-      // Check authentication
-      if (!req.session?.localUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      console.log("Received payment data:", JSON.stringify(req.body, null, 2));
-      const paymentData = insertPaymentSchema.parse(req.body);
-      console.log("Parsed payment data:", JSON.stringify(paymentData, null, 2));
-      const payment = await storage.createPayment(paymentData);
-      res.status(201).json(payment);
-    } catch (error) {
-      console.error("Payment creation error:", error);
-      if (error instanceof Error) {
-        console.error("Error message:", error.message);
-        console.error("Error stack:", error.stack);
-      }
-      res.status(400).json({ 
-        message: "Invalid payment data", 
-        error: error instanceof Error ? error.message : String(error),
-        details: error
-      });
-    }
-  });
-
-  app.put("/api/payments/:id", async (req, res) => {
-    try {
-      // Transform date strings to Date objects
-      const updates = { ...req.body };
-      if (updates.dueDate && typeof updates.dueDate === 'string') {
-        updates.dueDate = new Date(updates.dueDate);
-      }
-      if (updates.paidDate && typeof updates.paidDate === 'string') {
-        updates.paidDate = new Date(updates.paidDate);
-      }
-      
-      const payment = await storage.updatePayment(parseInt(req.params.id), updates);
-      if (!payment) return res.status(404).json({ message: "Payment not found" });
-      res.json(payment);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid payment update data", error });
-    }
-  });
-
-  // Invoices
-  app.get("/api/teams/:teamId/invoices", async (req, res) => {
-    const invoices = await storage.getInvoicesByTeam(parseInt(req.params.teamId));
-    res.json(invoices);
-  });
-
-  app.get("/api/teams/:teamId/invoices/pending", async (req, res) => {
-    const invoices = await storage.getPendingInvoicesByTeam(parseInt(req.params.teamId));
-    res.json(invoices);
-  });
-
-  app.post("/api/invoices", async (req, res) => {
-    try {
-      const invoiceData = insertInvoiceSchema.parse(req.body);
-      const invoice = await storage.createInvoice(invoiceData);
-      res.status(201).json(invoice);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid invoice data", error });
-    }
-  });
-
-  app.put("/api/invoices/:id", async (req, res) => {
-    try {
-      // Transform date strings to Date objects
-      const updates = { ...req.body };
-      if (updates.dueDate && typeof updates.dueDate === 'string') {
-        updates.dueDate = new Date(updates.dueDate);
-      }
-      if (updates.paidDate && typeof updates.paidDate === 'string') {
-        updates.paidDate = new Date(updates.paidDate);
-      }
-      
-      const invoice = await storage.updateInvoice(parseInt(req.params.id), updates);
-      if (!invoice) return res.status(404).json({ message: "Invoice not found" });
-      res.json(invoice);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid invoice update data", error });
-    }
   });
 
   // Dashboard Stats

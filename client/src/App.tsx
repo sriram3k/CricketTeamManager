@@ -12,8 +12,6 @@ import LiveScoring from "@/pages/LiveScoring";
 import PlayerManagement from "@/pages/PlayerManagement";
 import TeamManagement from "@/pages/TeamManagement";
 import Availability from "@/pages/Availability";
-import Payments from "@/pages/Payments";
-import Invoices from "@/pages/Invoices";
 import Analytics from "@/pages/Analytics";
 import Schedule from "@/pages/Schedule";
 import Login from "@/pages/Login";
@@ -69,7 +67,6 @@ function Router() {
             <Route path="/" component={PlayerDashboard} />
             <Route path="/schedule" component={Schedule} />
             <Route path="/availability" component={Availability} />
-            <Route path="/payments" component={Payments} />
             <Route component={NotFound} />
           </>
         ) : (
@@ -81,8 +78,6 @@ function Router() {
             <Route path="/team-management" component={TeamManagement} />
             <Route path="/player-management" component={PlayerManagement} />
             <Route path="/availability" component={Availability} />
-            <Route path="/payments" component={Payments} />
-            <Route path="/invoices" component={Invoices} />
             <Route path="/analytics" component={Analytics} />
             <Route component={NotFound} />
           </>

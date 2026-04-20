@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   Calendar,
-  DollarSign,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -41,11 +40,6 @@ export default function PlayerDashboard() {
   });
 
   const matches = matchData as any[];
-
-  const { data: payments = [] } = useQuery({
-    queryKey: [`/api/players/${currentPlayer?.id}/payments`],
-    enabled: !!currentPlayer?.id,
-  });
 
   const { data: availabilityRequests = [] } = useQuery({
     queryKey: [`/api/teams/${teamId}/availability-requests`],
@@ -84,28 +78,6 @@ export default function PlayerDashboard() {
     },
   });
 
-  const markPaymentPaidMutation = useMutation({
-    mutationFn: (paymentId: number) => 
-      apiRequest("PUT", `/api/payments/${paymentId}`, { 
-        status: "paid",
-        paidDate: new Date().toISOString()
-      }),
-    onSuccess: () => {
-      toast({
-        title: "Payment recorded",
-        description: "Payment has been marked as paid.",
-      });
-      queryClient.invalidateQueries({ queryKey: [`/api/players/${currentPlayer?.id}/payments`] });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update payment status.",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Aggregate career stats from all match stats
   const careerStats = (playerStats as any[]).reduce(
     (acc, s) => ({
@@ -126,25 +98,10 @@ export default function PlayerDashboard() {
   const bowlingAvg = careerStats.wickets > 0 ? (careerStats.runsConceded / careerStats.wickets).toFixed(1) : '-';
   const economy = careerStats.ballsBowled > 0 ? ((careerStats.runsConceded / careerStats.ballsBowled) * 6).toFixed(1) : '-';
 
-  // Filter for player's outstanding payments
-  const outstandingPayments = payments.filter((payment: any) =>
-    payment.status === "pending" || payment.status === "overdue"
-  );
-
   // Filter for upcoming matches
   const upcomingMatches = matches.filter((match: any) => 
     new Date(match.date) > new Date() && match.status === "scheduled"
   ).slice(0, 5);
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      pending: "outline",
-      paid: "default",
-      overdue: "destructive",
-      partial: "secondary",
-    };
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
@@ -167,7 +124,7 @@ export default function PlayerDashboard() {
         </div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Upcoming Matches</CardTitle>
@@ -177,19 +134,6 @@ export default function PlayerDashboard() {
               <div className="text-2xl font-bold">{upcomingMatches.length}</div>
               <p className="text-xs text-muted-foreground">
                 Next match: {upcomingMatches[0] ? new Date(upcomingMatches[0].date).toLocaleDateString() : 'None scheduled'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Outstanding Payments</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{outstandingPayments.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Total: ${outstandingPayments.reduce((sum: number, p: any) => sum + parseFloat(p.amount || '0'), 0).toFixed(2)}
               </p>
             </CardContent>
           </Card>
@@ -208,116 +152,65 @@ export default function PlayerDashboard() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Availability Requests */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                Availability Requests
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {availabilityRequests.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">No availability requests at the moment</p>
-              ) : (
-                <div className="space-y-4">
-                  {availabilityRequests.map((request: any) => (
-                    <div key={request.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold">vs {request.opponent || 'Match'}</h4>
-                          <p className="text-sm text-gray-600">
-                            {request.matchDate ? new Date(request.matchDate).toLocaleDateString() : 'TBD'} at {request.venue || 'TBD'}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Deadline: {new Date(request.deadline).toLocaleDateString()} at {new Date(request.deadline).toLocaleTimeString()}
-                          </p>
-                          {request.message && (
-                            <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">{request.message}</p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <Badge variant={new Date(request.deadline) < new Date() ? "secondary" : "default"}>
-                            {new Date(request.deadline) < new Date() ? "Expired" : "Active"}
-                          </Badge>
-                        </div>
+        {/* Availability Requests */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5" />
+              Availability Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {availabilityRequests.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No availability requests at the moment</p>
+            ) : (
+              <div className="space-y-4">
+                {availabilityRequests.map((request: any) => (
+                  <div key={request.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-semibold">vs {request.opponent || 'Match'}</h4>
+                        <p className="text-sm text-gray-600">
+                          {request.matchDate ? new Date(request.matchDate).toLocaleDateString() : 'TBD'} at {request.venue || 'TBD'}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Deadline: {new Date(request.deadline).toLocaleDateString()} at {new Date(request.deadline).toLocaleTimeString()}
+                        </p>
+                        {request.message && (
+                          <p className="text-sm text-gray-700 mt-2 p-2 bg-gray-50 rounded">{request.message}</p>
+                        )}
                       </div>
-                      
-                      <div className="flex gap-2">
-                        <Select 
-                          onValueChange={(value) => 
-                            respondToAvailabilityMutation.mutate({ 
-                              requestId: request.id, 
-                              response: value 
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Your response" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="unavailable">Unavailable</SelectItem>
-                            <SelectItem value="maybe">Maybe</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      <div className="text-right">
+                        <Badge variant={new Date(request.deadline) < new Date() ? "secondary" : "default"}>
+                          {new Date(request.deadline) < new Date() ? "Expired" : "Active"}
+                        </Badge>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Outstanding Payments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Outstanding Payments
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {outstandingPayments.length === 0 ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                  <p className="text-gray-500">All payments are up to date!</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {outstandingPayments.map((payment: any) => (
-                    <div key={payment.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold">{payment.purpose || 'Match Fee'}</h4>
-                          <p className="text-sm text-gray-600">
-                            Match on {new Date(payment.match?.date || '').toLocaleDateString()}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Due: {new Date(payment.dueDate).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold">${payment.amount}</p>
-                          {getStatusBadge(payment.status)}
-                          <Button 
-                            size="sm" 
-                            className="mt-2"
-                            onClick={() => markPaymentPaidMutation.mutate(payment.id)}
-                            disabled={markPaymentPaidMutation.isPending}
-                          >
-                            Mark as Paid
-                          </Button>
-                        </div>
-                      </div>
+                    <div className="flex gap-2">
+                      <Select
+                        onValueChange={(value) =>
+                          respondToAvailabilityMutation.mutate({
+                            requestId: request.id,
+                            response: value
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue placeholder="Your response" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">Available</SelectItem>
+                          <SelectItem value="unavailable">Unavailable</SelectItem>
+                          <SelectItem value="maybe">Maybe</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Upcoming Matches */}
         <Card className="mt-8">

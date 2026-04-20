@@ -1,12 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, Users, Calendar, DollarSign } from "lucide-react";
+import { Trophy, Users, Calendar } from "lucide-react";
 
 interface StatsGridProps {
   stats?: {
     matchesWon: number;
     activePlayers: number;
     upcomingMatches: number;
-    pendingPayments: number;
+    pendingPayments?: number;
   };
 }
 
@@ -33,17 +33,10 @@ export default function StatsGrid({ stats }: StatsGridProps) {
       bgColor: "bg-orange-100 dark:bg-orange-900/20",
       textColor: "text-orange-600 dark:text-orange-400",
     },
-    {
-      title: "Outstanding Fees",
-      value: stats?.pendingPayments ? `₹${stats.pendingPayments.toLocaleString()}` : "₹0",
-      icon: DollarSign,
-      bgColor: "bg-red-100 dark:bg-red-900/20",
-      textColor: "text-red-600 dark:text-red-400",
-    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {statsData.map((stat) => {
         const IconComponent = stat.icon;
         
