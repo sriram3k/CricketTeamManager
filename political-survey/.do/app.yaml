@@ -1,0 +1,17 @@
+# Digital Ocean App Platform spec
+# Connect your GitHub repo at https://cloud.digitalocean.com/apps
+# Select this file as the App Spec, or paste this content.
+
+name: tn-political-survey
+region: blr  # Bangalore — closest to Tamil Nadu audience
+
+static_sites:
+  - name: survey
+    source_dir: /political-survey
+    build_command: npm install && npm run build
+    output_dir: dist
+    index_document: index.html
+    error_document: index.html  # SPA fallback
+    environment_slug: node-20
+    routes:
+      - path: /
