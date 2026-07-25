@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api';
 import { useDebounced, useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Field, Loading, Row, SearchBar, Segmented } from '../../src/components/ui';
 import { colors, formatDate, formatSGD, radius, spacing, type } from '../../src/theme';
 import type { BulkPreview, BulkResult, PaymentMode, PendingPlayerRow } from '../../src/types';
@@ -18,6 +19,7 @@ type Mode = 'FULL' | 'AMOUNT';
  */
 export default function BulkPaymentScreen() {
   const router = useRouter();
+  const dialog = useDialog();
   const [step, setStep] = useState<Step>('select');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<Sort>('amount');
@@ -119,11 +121,12 @@ export default function BulkPaymentScreen() {
         mode: method,
         reference: reference.trim() || undefined,
       });
-      Alert.alert(
-        'Payments recorded',
-        `${res.message}\n\nYou can undo this until ${formatDate(res.undoAvailableUntil)}.`,
-        [{ text: 'Done', onPress: () => router.back() }],
-      );
+      await dialog.notify({
+        title: 'Payments recorded',
+        message: `${res.message}\n\nYou can undo this until ${formatDate(res.undoAvailableUntil)}.`,
+        confirmLabel: 'Done',
+      });
+      router.back();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fieldErrors);

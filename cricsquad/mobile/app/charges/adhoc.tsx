@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api';
 import { useDebounced, useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Button, Card, EmptyState, ErrorBanner, Field, Loading, Row, SearchBar, Segmented } from '../../src/components/ui';
 import { colors, formatSGD, radius, spacing, type } from '../../src/theme';
 import type { ChargeType, PlayerRow } from '../../src/types';
@@ -15,6 +16,7 @@ type Target = 'PLAYERS' | 'ALL_ACTIVE';
  */
 export default function AdhocChargeScreen() {
   const router = useRouter();
+  const dialog = useDialog();
   const [chargeType, setChargeType] = useState<ChargeType>('REGISTRATION_FEE');
   const [target, setTarget] = useState<Target>('ALL_ACTIVE');
   const [amount, setAmount] = useState('');
@@ -85,9 +87,8 @@ export default function AdhocChargeScreen() {
           ...(target === 'PLAYERS' ? { playerIds: [...selected] } : {}),
         },
       );
-      Alert.alert('Charges raised', res.message, [
-        { text: 'Done', onPress: () => router.back() },
-      ]);
+      await dialog.notify({ title: 'Charges raised', message: res.message, confirmLabel: 'Done' });
+      router.back();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fieldErrors);

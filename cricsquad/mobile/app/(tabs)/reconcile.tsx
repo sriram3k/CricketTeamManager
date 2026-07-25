@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { api, ApiError } from '../../src/api';
 import { useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Loading, Row } from '../../src/components/ui';
 import { colors, formatDate, spacing, type } from '../../src/theme';
 import type { StatementUploadRow, UploadStatementResult } from '../../src/types';
@@ -11,6 +12,7 @@ import type { StatementUploadRow, UploadStatementResult } from '../../src/types'
 /** Feature 3 — upload a fortnightly DBS statement and pick up past ones. */
 export default function ReconcileScreen() {
   const router = useRouter();
+  const dialog = useDialog();
   const [banner, setBanner] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const uploads = useLoader(() => api.get<StatementUploadRow[]>('/api/statements'), []);
@@ -46,9 +48,12 @@ export default function ReconcileScreen() {
 
       const skippedNote =
         res.skipped.length > 0 ? `\n\n${res.skipped.length} row(s) were skipped.` : '';
-      Alert.alert('Statement read', `${res.message}${skippedNote}`, [
-        { text: 'Review now', onPress: () => router.push(`/statement/${res.statementUploadId}`) },
-      ]);
+      await dialog.notify({
+        title: 'Statement read',
+        message: `${res.message}${skippedNote}`,
+        confirmLabel: 'Review now',
+      });
+      router.push(`/statement/${res.statementUploadId}`);
       void uploads.refresh();
     } catch (err) {
       // A bad mapping surfaces as a field error naming the missing column.

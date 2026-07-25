@@ -10,8 +10,12 @@ app in this repository but shares no code, schema or database with it.
 ```
 cricsquad/
 ├── server/     Express + Prisma + PostgreSQL API
-└── mobile/     Expo (React Native) client
+└── mobile/     Expo client — one codebase, runs on web, iOS and Android
 ```
+
+The client targets **web** as well as native. `npm run web` serves it in a
+browser; `npx expo export --platform web` produces a static SPA that deploys
+alongside the API under one domain (see `DEPLOY.md`).
 
 ## Quick start
 
@@ -27,10 +31,11 @@ npx prisma migrate deploy
 npm run seed                  # 15 players, 1 tournament, 3 matches, 2 invoices
 npm run dev                   # http://localhost:4000
 
-# 3. Mobile app
+# 3. Client
 cd ../mobile
 npm install
-npm start                     # then press i / a, or scan the QR code
+npm run web                   # browser at http://localhost:8081
+# or: npm start               # then press i / a, or scan the QR code for a phone
 ```
 
 The seed prints its logins:
@@ -43,8 +48,10 @@ The seed prints its logins:
 A sample DBS export sits at `server/sample-data/dbs-statement-sample.csv`, so
 the reconciliation flow is demo-able straight after seeding.
 
-> On a physical device, `localhost` points at the phone. Set the API host in
-> `mobile/app.json` (`expo.extra.apiBaseUrl`) to your machine's LAN address.
+> `expo.extra.apiBaseUrl` in `mobile/app.json` is empty, which means
+> *same-origin* on web — correct for both `npm run web` and the deployment. On
+> a physical device `localhost` points at the phone, so set it to your
+> machine's LAN address or the deployed URL before using Expo Go.
 
 ## Features
 

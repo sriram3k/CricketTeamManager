@@ -48,11 +48,33 @@ export function errorHandler(
     }
   }
 
-  const message = err instanceof Error ? err.message : 'Unexpected error';
+  // Always log the full error server-side — it is the only copy.
   if (process.env.NODE_ENV !== 'test') {
     // eslint-disable-next-line no-console
     console.error('[cricsquad] unhandled error:', err);
   }
+
+  // A database that is down or unreachable is not the caller's fault, and
+  // saying so plainly is more useful than a generic 500.
+  if (
+    err instanceof Prisma.PrismaClientInitializationError ||
+    err instanceof Prisma.PrismaClientRustPanicError
+  ) {
+    return res.status(503).json({
+      message: 'CricSquad is temporarily unavailable. Please try again in a moment.',
+      code: 'service_unavailable',
+    });
+  }
+
+  // Never return raw error text to the client in production: Prisma messages
+  // carry absolute source paths, query internals and schema details, and this
+  // handler also covers unauthenticated routes such as login.
+  const isProduction = process.env.NODE_ENV === 'production';
+  const message =
+    isProduction || !(err instanceof Error)
+      ? 'Something went wrong. Please try again.'
+      : err.message;
+
   return res.status(500).json({ message, code: 'internal_error' });
 }
 

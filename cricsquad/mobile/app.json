@@ -21,9 +21,14 @@
         "backgroundColor": "#0F3D2E"
       }
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
     "plugins": ["expo-router"],
     "extra": {
-      "apiBaseUrl": "http://localhost:4000"
+      "_comment": "Leave apiBaseUrl empty for the web build so it calls the API same-origin. Set it to the deployed URL when running the native app in Expo Go.",
+      "apiBaseUrl": ""
     }
   }
 }

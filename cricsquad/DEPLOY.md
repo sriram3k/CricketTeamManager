@@ -1,7 +1,16 @@
 # Deploying CricSquad to DigitalOcean
 
-The App Platform spec is at `cricsquad/.do/app.yaml`. It provisions the
-CricSquad API plus its own managed PostgreSQL 16 database in the `sgp` region.
+The App Platform spec is at `cricsquad/.do/app.yaml`. It provisions three
+things in the `sgp` region:
+
+| Component | What it is | Route |
+| --------- | ---------- | ----- |
+| `web`     | The CricSquad web app (static SPA) | `/` |
+| `api`     | The Express API | `/api` |
+| `cricsquad-db` | Managed PostgreSQL 16 | — |
+
+Both components sit behind **one domain**, so the deployed URL opens the app in
+a browser and the app calls the API same-origin. Nothing extra to configure.
 
 This is a **separate app** from the CrickIQ spec at the repository root
 (`/.do/app.yaml`). Deploying CricSquad does not touch CrickIQ — different app
@@ -49,6 +58,9 @@ curl -s "$URL/api/health"
 # {"status":"ok","currency":"SGD"}
 ```
 
+Then open `$URL` in a browser — that is the app itself, not the API. Sign in
+with the seeded admin below.
+
 Migrations run automatically on every deploy via `npm run start:migrate`,
 which calls `prisma migrate deploy` — it only replays committed migration
 files and never generates, resets, or drops anything.
@@ -81,18 +93,31 @@ pending/paid charges, and 2 invoices, then prints the logins:
 credentials committed to a public repository, and the admin role can move
 money.
 
-## Pointing the mobile app at the deployment
+## Running the same code natively
 
-The Expo client reads its API host from `mobile/app.json`:
+The web app and the iOS/Android app are one Expo codebase. The deployed URL
+covers the browser; to run it on a phone:
 
 ```json
+// mobile/app.json — native builds have no origin to inherit, so point them
+// at the deployment. Leave this empty for web (it means same-origin).
 { "expo": { "extra": { "apiBaseUrl": "https://cricsquad-xxxxx.ondigitalocean.app" } } }
 ```
 
-Set that to the deployed URL, then `npm start` in `cricsquad/mobile`. The app
-is React Native — it runs in Expo Go or a simulator, not a browser. There is no
-web build configured, so the deployed URL serves the JSON API only; opening it
-in a browser gives you `/api/health`, not a UI.
+Then `npm start` in `cricsquad/mobile` and open it in Expo Go. Set the value
+back to `""` before building for web again.
+
+## Web behaviour worth knowing
+
+`Alert.alert` from React Native is a **no-op under react-native-web** — the
+dialog never appears and its button callbacks never fire, so a confirmation
+would silently cancel whatever it was guarding. CricSquad therefore uses its
+own `DialogProvider` (`src/dialog.tsx`), which renders a real Modal and behaves
+identically on web and native. Use `useDialog()` for any new confirmation; do
+not reach for `Alert`.
+
+Pull-to-refresh has no desktop equivalent, so on web use the browser reload or
+navigate between tabs to refetch. Every screen refetches on focus.
 
 ## Known limitations of this spec
 

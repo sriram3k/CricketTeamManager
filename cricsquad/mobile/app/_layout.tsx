@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { AuthProvider, useAuth } from '../src/auth';
+import { DialogProvider } from '../src/dialog';
 import { Loading } from '../src/components/ui';
 import { colors } from '../src/theme';
 
@@ -53,8 +54,10 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <StatusBar style="light" />
-      <RootNavigator />
+      <DialogProvider>
+        <StatusBar style="light" />
+        <RootNavigator />
+      </DialogProvider>
     </AuthProvider>
   );
 }

@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 /**
  * Thin API client. Every non-2xx response is turned into an ApiError carrying
@@ -6,9 +7,21 @@ import Constants from 'expo-constants';
  * instead of showing a raw error string.
  */
 
-const BASE_URL: string =
-  (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl ??
-  'http://localhost:4000';
+const configured = (
+  Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined
+)?.apiBaseUrl?.trim();
+
+/**
+ * On web the app is served from the same domain as the API — App Platform
+ * routes `/api` to the API service and everything else to this bundle — so an
+ * empty base URL means same-origin. Native builds have no origin to inherit,
+ * so they fall back to a local dev server unless `extra.apiBaseUrl` is set.
+ */
+const BASE_URL: string = configured
+  ? configured
+  : Platform.OS === 'web'
+    ? ''
+    : 'http://localhost:4000';
 
 export class ApiError extends Error {
   status: number;

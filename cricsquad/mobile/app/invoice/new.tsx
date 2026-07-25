@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import { api, ApiError } from '../../src/api';
 import { useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, ErrorBanner, Field, Loading, Row, SuccessBanner } from '../../src/components/ui';
 import { colors, spacing, type } from '../../src/theme';
 import type { ExtractResponse, Tournament } from '../../src/types';
@@ -16,6 +17,7 @@ import type { ExtractResponse, Tournament } from '../../src/types';
 export default function NewInvoiceScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const router = useRouter();
+  const dialog = useDialog();
 
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [vendorName, setVendorName] = useState('');
@@ -121,9 +123,12 @@ export default function NewInvoiceScreen() {
         fileUrl,
         source: fileUrl ? 'UPLOADED' : 'MANUAL',
       });
-      Alert.alert('Invoice saved', `${invoiceNumber.trim()} added to ${tournament.name}.`, [
-        { text: 'Done', onPress: () => router.back() },
-      ]);
+      await dialog.notify({
+        title: 'Invoice saved',
+        message: `${invoiceNumber.trim()} added to ${tournament.name}.`,
+        confirmLabel: 'Done',
+      });
+      router.back();
     } catch (err) {
       if (err instanceof ApiError) {
         setErrors(err.fieldErrors);

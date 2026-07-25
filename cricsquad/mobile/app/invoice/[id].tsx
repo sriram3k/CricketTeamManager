@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Alert, Modal, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { api, ApiError } from '../../src/api';
 import { useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Field, Loading, Row, Segmented } from '../../src/components/ui';
 import { colors, formatDate, formatSGD, spacing, type } from '../../src/theme';
 import type { InvoiceDetail, InvoicePaymentMode } from '../../src/types';
@@ -10,30 +11,27 @@ import type { InvoiceDetail, InvoicePaymentMode } from '../../src/types';
 /** Feature 5 — invoice detail, mark-as-paid, reopen, and the audit trail. */
 export default function InvoiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const dialog = useDialog();
   const [payOpen, setPayOpen] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const invoice = useLoader(() => api.get<InvoiceDetail>(`/api/invoices/${id}`), [id]);
 
   async function reopen() {
-    Alert.alert(
-      'Reopen this invoice?',
-      'The transaction reference, payment mode and paid date are cleared. The change is recorded against your name.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reopen',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await api.post(`/api/invoices/${id}/reopen`, {});
-              void invoice.refresh();
-            } catch (err) {
-              setBanner(err instanceof ApiError ? err.message : 'Could not reopen the invoice.');
-            }
-          },
-        },
-      ],
-    );
+    const confirmed = await dialog.confirm({
+      title: 'Reopen this invoice?',
+      message:
+        'The transaction reference, payment mode and paid date are cleared. The change is recorded against your name.',
+      confirmLabel: 'Reopen',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await api.post(`/api/invoices/${id}/reopen`, {});
+      void invoice.refresh();
+    } catch (err) {
+      setBanner(err instanceof ApiError ? err.message : 'Could not reopen the invoice.');
+    }
   }
 
   if (invoice.loading) return <Loading />;

@@ -1,4 +1,11 @@
-# DigitalOcean App Platform spec for the CricSquad API.
+# DigitalOcean App Platform spec for CricSquad.
+#
+# One domain serves both components:
+#   /api/*  -> the Express API service
+#   /*      -> the exported web app (a static SPA)
+#
+# Because they share an origin, the web app calls the API with relative URLs
+# and needs no CORS or base-URL configuration.
 #
 # This is a separate app from the CrickIQ spec at the repository root
 # (/.do/app.yaml) — different service, different database, different name. The
@@ -34,6 +41,13 @@ services:
     http_port: 8080
     instance_size_slug: basic-xxs
     instance_count: 1
+
+    # Routes beginning /api reach this service. preserve_path_prefix keeps the
+    # prefix on the forwarded request, because the Express routes are mounted
+    # at /api/... and would 404 if it were stripped.
+    routes:
+      - path: /api
+        preserve_path_prefix: true
 
     health_check:
       http_path: /api/health
@@ -77,6 +91,30 @@ services:
       - key: UPLOAD_DIR
         value: /tmp/cricsquad-uploads
         scope: RUN_TIME
+
+static_sites:
+  - name: web
+    github:
+      repo: sriram3k/cricketteammanager
+      branch: claude/cricsquad-payments-invoicing-a6yf0l
+      deploy_on_push: true
+
+    source_dir: cricsquad/mobile
+    build_command: npm ci && npx expo export --platform web
+    output_dir: dist
+
+    # Everything that is not /api renders the app.
+    routes:
+      - path: /
+
+    # An SPA has no file on disk for /payments/bulk, so unknown paths fall back
+    # to the app shell and expo-router resolves them client-side.
+    catchall_document: index.html
+
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: BUILD_TIME
 
 databases:
   - name: cricsquad-db

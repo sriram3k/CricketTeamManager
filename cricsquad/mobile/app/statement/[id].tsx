@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api';
 import { useDebounced, useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Loading, Row, SearchBar, Segmented } from '../../src/components/ui';
 import { colors, formatDate, formatSGD, radius, spacing, type } from '../../src/theme';
 import type { PlayerRow, ReconciliationSummary, ReviewLine, ReviewScreen } from '../../src/types';
@@ -16,6 +17,7 @@ type Tab = 'auto' | 'unmatched' | 'ignored';
 export default function StatementReviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const dialog = useDialog();
   const [tab, setTab] = useState<Tab>('auto');
   const [banner, setBanner] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,7 @@ export default function StatementReviewScreen() {
     try {
       const res = await api.post<{ message: string }>(`/api/statements/${id}/confirm-all`);
       setBanner(null);
-      Alert.alert('Confirmed', res.message);
+      await dialog.notify({ title: 'Confirmed', message: res.message });
       void review.refresh();
     } catch (err) {
       setBanner(err instanceof ApiError ? err.message : 'Could not confirm the matches.');
@@ -57,39 +59,35 @@ export default function StatementReviewScreen() {
 
   async function complete() {
     const unmatchedCount = review.data?.unmatched.length ?? 0;
-    Alert.alert(
-      'Complete reconciliation?',
-      unmatchedCount > 0
-        ? `${unmatchedCount} line(s) are still unmatched and will be left out. Everything matched will be recorded as payments in one go.`
-        : 'Everything matched will be recorded as payments in one go.',
-      [
-        { text: 'Not yet', style: 'cancel' },
-        {
-          text: 'Complete',
-          onPress: async () => {
-            setBusy(true);
-            try {
-              const summary = await api.post<ReconciliationSummary>(
-                `/api/statements/${id}/complete`,
-              );
-              Alert.alert(
-                'Reconciliation complete',
-                `${summary.message}\n\n${summary.linesIgnored} line(s) ignored, ${summary.linesUnmatched} left unmatched.`,
-                [{ text: 'Done', onPress: () => router.back() }],
-              );
-            } catch (err) {
-              setBanner(
-                err instanceof ApiError
-                  ? err.message
-                  : 'Could not complete the reconciliation. Nothing was saved.',
-              );
-            } finally {
-              setBusy(false);
-            }
-          },
-        },
-      ],
-    );
+    const confirmed = await dialog.confirm({
+      title: 'Complete reconciliation?',
+      message:
+        unmatchedCount > 0
+          ? `${unmatchedCount} line(s) are still unmatched and will be left out. Everything matched will be recorded as payments in one go.`
+          : 'Everything matched will be recorded as payments in one go.',
+      confirmLabel: 'Complete',
+      cancelLabel: 'Not yet',
+    });
+    if (!confirmed) return;
+
+    setBusy(true);
+    try {
+      const summary = await api.post<ReconciliationSummary>(`/api/statements/${id}/complete`);
+      await dialog.notify({
+        title: 'Reconciliation complete',
+        message: `${summary.message}\n\n${summary.linesIgnored} line(s) ignored, ${summary.linesUnmatched} left unmatched.`,
+        confirmLabel: 'Done',
+      });
+      router.back();
+    } catch (err) {
+      setBanner(
+        err instanceof ApiError
+          ? err.message
+          : 'Could not complete the reconciliation. Nothing was saved.',
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (review.loading) return <Loading label="Loading statement…" />;

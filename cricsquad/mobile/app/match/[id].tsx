@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { api, ApiError } from '../../src/api';
 import { useDebounced, useLoader } from '../../src/hooks';
+import { useDialog } from '../../src/dialog';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Loading, Row, SearchBar } from '../../src/components/ui';
 import { colors, formatDate, formatSGD, radius, spacing, type } from '../../src/theme';
 import type { MatchDetail, PlayerRow, SquadRole } from '../../src/types';
@@ -18,6 +19,7 @@ const MAX_SUBS = 4;
 export default function SquadSelectionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const dialog = useDialog();
 
   const [search, setSearch] = useState('');
   const debounced = useDebounced(search);
@@ -110,13 +112,15 @@ export default function SquadSelectionScreen() {
         `/api/matches/${id}/squad`,
         { selections: [...current].map(([playerId, role]) => ({ playerId, role })) },
       );
-      Alert.alert(
-        'Squad confirmed',
-        res.chargesCreated > 0
-          ? `${res.message}\n\n${formatSGD(res.totalCharged)} has been added to player dues.`
-          : res.message,
-        [{ text: 'Done', onPress: () => router.back() }],
-      );
+      await dialog.notify({
+        title: 'Squad confirmed',
+        message:
+          res.chargesCreated > 0
+            ? `${res.message}\n\n${formatSGD(res.totalCharged)} has been added to player dues.`
+            : res.message,
+        confirmLabel: 'Done',
+      });
+      router.back();
     } catch (err) {
       if (err instanceof ApiError) {
         setFieldError(err.fieldErrors.players ?? null);

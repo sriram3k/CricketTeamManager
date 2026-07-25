@@ -6,11 +6,12 @@ import { useLoader } from '../../src/hooks';
 import { Badge, Button, Card, EmptyState, ErrorBanner, Loading, Row } from '../../src/components/ui';
 import { colors, formatDate, formatSGD, spacing, type } from '../../src/theme';
 import type { PendingPlayerRow, UndoableAction } from '../../src/types';
-import { Alert } from 'react-native';
+import { useDialog } from '../../src/dialog';
 
 /** Feature 2 — entry point: who owes what, plus the undo window. */
 export default function PaymentsScreen() {
   const router = useRouter();
+  const dialog = useDialog();
   const pending = useLoader(() => api.get<PendingPlayerRow[]>('/api/payments/pending'), []);
   const undoable = useLoader(
     () => api.get<UndoableAction | null>('/api/payments/bulk/undoable'),
@@ -26,32 +27,26 @@ export default function PaymentsScreen() {
   );
 
   async function undo(action: UndoableAction) {
-    Alert.alert(
-      'Undo this bulk payment?',
-      `This reverses ${formatSGD(action.totalAmount)} across ${action.playerCount} player(s) and reopens ${action.chargesCleared} charge(s).`,
-      [
-        { text: 'Keep it', style: 'cancel' },
-        {
-          text: 'Undo',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const res = await api.post<{ message: string }>(
-                `/api/payments/bulk/${action.id}/undo`,
-              );
-              Alert.alert('Undone', res.message);
-              void pending.refresh();
-              void undoable.refresh();
-            } catch (err) {
-              Alert.alert(
-                'Could not undo',
-                err instanceof ApiError ? err.message : 'Please try again.',
-              );
-            }
-          },
-        },
-      ],
-    );
+    const confirmed = await dialog.confirm({
+      title: 'Undo this bulk payment?',
+      message: `This reverses ${formatSGD(action.totalAmount)} across ${action.playerCount} player(s) and reopens ${action.chargesCleared} charge(s).`,
+      confirmLabel: 'Undo',
+      cancelLabel: 'Keep it',
+      destructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      const res = await api.post<{ message: string }>(`/api/payments/bulk/${action.id}/undo`);
+      await dialog.notify({ title: 'Undone', message: res.message });
+      void pending.refresh();
+      void undoable.refresh();
+    } catch (err) {
+      await dialog.notify({
+        title: 'Could not undo',
+        message: err instanceof ApiError ? err.message : 'Please try again.',
+      });
+    }
   }
 
   const rows = pending.data ?? [];
