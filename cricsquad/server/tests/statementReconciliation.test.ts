@@ -167,6 +167,45 @@ describe('auto-matching and reconciliation', () => {
     expect(lines[3].matchStatus).toBe('UNMATCHED');
   });
 
+  it('does not treat a last-4 inside a longer number as a mobile match', async () => {
+    // "4567" is a substring of 91234567, but it is not a standalone token, so
+    // Sanjay must not be proposed. Only Priya's full number should match.
+    const priya = await createPlayer({ name: 'Priya Nair', mobile: '+65 9123 4568' });
+    const sanjay = await createPlayer({ name: 'Sanjay Patel', mobile: '+65 8123 4567' });
+    // Balances deliberately unequal to the credit, so tier 1 cannot fire and
+    // the description tier is what is under test.
+    await createCharge(priya.id, 12000, new Date('2026-01-01'));
+    await createCharge(sanjay.id, 5000, new Date('2026-01-01'));
+
+    const result = await uploadStatement({
+      buffer: csv(['03 Mar 2026,ITR,,90.00,PAYNOW TRANSFER,FROM: PRIYA NAIR 91234568,OTHR']),
+      fileName: 'mobile.csv',
+    });
+
+    expect(result.autoMatchedCount).toBe(1);
+    const line = await prisma.statementLine.findFirstOrThrow({
+      where: { statementUploadId: result.statementUploadId },
+    });
+    expect(line.matchedPlayerId).toBe(priya.id);
+  });
+
+  it('refuses to guess when the narrative names one player and numbers another', async () => {
+    const named = await createPlayer({ name: 'Priya Nair', mobile: '+65 9123 4568' });
+    const numbered = await createPlayer({ name: 'Tan Wei Ming', mobile: '+65 9123 4567' });
+    // Neither balance equals the credit, so tier 1 cannot resolve it first.
+    await createCharge(named.id, 12000, new Date('2026-01-01'));
+    await createCharge(numbered.id, 5000, new Date('2026-01-01'));
+
+    const result = await uploadStatement({
+      // Priya's name, Tan's phone number — genuinely ambiguous.
+      buffer: csv(['03 Mar 2026,ITR,,90.00,PAYNOW TRANSFER,FROM: PRIYA NAIR 91234567,OTHR']),
+      fileName: 'conflict.csv',
+    });
+
+    expect(result.autoMatchedCount).toBe(0);
+    expect(result.unmatchedCount).toBe(1);
+  });
+
   it('leaves an ambiguous amount unmatched rather than guessing', async () => {
     const one = await createPlayer({ name: 'Aaa Bbb' });
     const two = await createPlayer({ name: 'Ccc Ddd' });

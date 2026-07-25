@@ -40,12 +40,50 @@ export function normalise(text: string): string {
     .trim();
 }
 
-/** Last 4+ digits of a Singapore mobile, as they appear in a PayNow narrative. */
-function mobileFragments(mobile: string): string[] {
+/** Every run of consecutive digits in a narrative, e.g. "REF 9123 4567" → ['9123','4567']. */
+function digitRuns(text: string): string[] {
+  return text.match(/\d+/g) ?? [];
+}
+
+export interface MobileHit {
+  confidence: number;
+  reason: string;
+}
+
+/**
+ * Match a player's mobile against a narrative.
+ *
+ * The whole local number is a strong identifier. A bare last-4 is not: it is
+ * only accepted when it stands alone as its own 4-digit token, because a
+ * substring test would match "4567" inside any longer number — in a 15-player
+ * roster that produced several false hits on a single 8-digit string.
+ */
+function matchMobile(mobile: string, description: string): MobileHit | null {
   const digits = mobile.replace(/\D/g, '');
-  if (digits.length < 4) return [];
+  if (digits.length < 4) return null;
+
   const local = digits.length > 8 ? digits.slice(-8) : digits;
-  return [local, local.slice(-4)];
+  const runs = digitRuns(description);
+
+  // The full local number, either as its own token or at the end of a longer
+  // one (a narrative sometimes prefixes the country code).
+  if (runs.some((run) => run === local || run.endsWith(local))) {
+    return { confidence: 0.9, reason: `Mobile number ${local} appears in the description` };
+  }
+
+  // The number split across tokens, e.g. "9123 4567".
+  const joined = runs.join('');
+  if (local.length === 8 && joined.includes(local)) {
+    return { confidence: 0.9, reason: `Mobile number ${local} appears in the description` };
+  }
+
+  const lastFour = local.slice(-4);
+  if (runs.some((run) => run === lastFour)) {
+    // Weak on its own — enough to propose, not enough to outrank a name.
+    return { confidence: 0.6, reason: `Mobile ending ${lastFour} appears in the description` };
+  }
+
+  return null;
 }
 
 /**
@@ -86,8 +124,7 @@ export function matchByDescription(
   candidates: MatchCandidate[],
 ): MatchProposal | null {
   const haystack = normalise(description);
-  const digits = description.replace(/\D/g, '');
-  if (!haystack && !digits) return null;
+  if (!haystack && digitRuns(description).length === 0) return null;
 
   const hits: Array<{ candidate: MatchCandidate; confidence: number; reason: string }> = [];
 
@@ -95,18 +132,12 @@ export function matchByDescription(
     const name = normalise(candidate.name);
     if (!name) continue;
 
-    if (candidate.mobile) {
-      const fragment = mobileFragments(candidate.mobile).find(
-        (f) => f.length >= 4 && digits.includes(f),
-      );
-      if (fragment) {
-        hits.push({
-          candidate,
-          confidence: 0.88,
-          reason: `Mobile number ending ${fragment.slice(-4)} appears in the description`,
-        });
-        continue;
-      }
+    const mobileHit = candidate.mobile ? matchMobile(candidate.mobile, description) : null;
+    // A full mobile number beats a name; a bare last-4 does not, so fall
+    // through and let the name check score this candidate instead.
+    if (mobileHit && mobileHit.confidence >= 0.9) {
+      hits.push({ candidate, confidence: mobileHit.confidence, reason: mobileHit.reason });
+      continue;
     }
 
     if (haystack.includes(name)) {
@@ -130,6 +161,9 @@ export function matchByDescription(
         confidence: 0.8,
         reason: `All name parts of "${candidate.name}" appear in the description`,
       });
+    } else if (mobileHit) {
+      // Nothing in the name matched, so a lone last-4 is all we have.
+      hits.push({ candidate, confidence: mobileHit.confidence, reason: mobileHit.reason });
     } else if (matched.length > 0) {
       hits.push({
         candidate,
@@ -145,8 +179,14 @@ export function matchByDescription(
   const best = hits[0];
   const runnerUp = hits[1];
 
-  // A tie between two players is not a match — send it to manual review.
-  if (runnerUp && runnerUp.confidence === best.confidence) return null;
+  if (runnerUp) {
+    // A tie is not a match — send it to manual review.
+    if (runnerUp.confidence === best.confidence) return null;
+    // Nor is a narrative that points strongly at two different people, e.g. one
+    // player's name alongside another player's number. Better to ask than to
+    // credit the wrong account.
+    if (best.confidence >= 0.8 && runnerUp.confidence >= 0.8) return null;
+  }
 
   return { playerId: best.candidate.playerId, confidence: best.confidence, reason: best.reason };
 }
@@ -164,21 +204,19 @@ export function matchByPayNowReference(
 
   // The narrative usually reads "PAYNOW TRANSFER FROM: X REF: Y".
   const refSegment = description.match(/(?:ref|reference|otr|remarks?)[:\s]+(.{2,60})/i)?.[1] ?? '';
-  const haystack = normalise(refSegment || description);
-  const digits = (refSegment || description).replace(/\D/g, '');
-  if (!haystack && !digits) return null;
+  const target = refSegment || description;
+  const haystack = normalise(target);
+  if (!haystack && digitRuns(target).length === 0) return null;
 
   const hits: MatchCandidate[] = [];
   const reasons = new Map<string, string>();
 
   for (const candidate of candidates) {
     if (candidate.mobile) {
-      const fragment = mobileFragments(candidate.mobile).find(
-        (f) => f.length >= 4 && digits.includes(f),
-      );
-      if (fragment) {
+      const mobileHit = matchMobile(candidate.mobile, target);
+      if (mobileHit) {
         hits.push(candidate);
-        reasons.set(candidate.playerId, `PayNow reference contains mobile ending ${fragment.slice(-4)}`);
+        reasons.set(candidate.playerId, `PayNow reference contains ${mobileHit.reason.toLowerCase()}`);
         continue;
       }
     }
