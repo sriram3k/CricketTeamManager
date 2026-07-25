@@ -1,0 +1,86 @@
+# DigitalOcean App Platform spec for the CricSquad API.
+#
+# This is a separate app from the CrickIQ spec at the repository root
+# (/.do/app.yaml) — different service, different database, different name. The
+# two do not interact; deploying this does not touch CrickIQ.
+#
+#   doctl apps create --spec cricsquad/.do/app.yaml
+#
+# See cricsquad/DEPLOY.md for the full walkthrough.
+
+name: cricsquad
+region: sgp                     # Singapore — the club and its users are here
+
+services:
+  - name: api
+    github:
+      repo: sriram3k/cricketteammanager
+      # Switch to `main` once this branch is merged.
+      branch: claude/cricsquad-payments-invoicing-a6yf0l
+      deploy_on_push: true
+
+    # Monorepo: build only the CricSquad server, not the CrickIQ app.
+    source_dir: cricsquad/server
+
+    # `npm run build` runs `prisma generate` first, so the client is emitted
+    # against the deployed schema rather than a stale cached one.
+    build_command: npm ci && npm run build
+
+    # Applies pending migrations before the server accepts traffic. Uses
+    # `migrate deploy`, which only replays committed migration files and never
+    # generates or resets anything.
+    run_command: npm run start:migrate
+
+    http_port: 8080
+    instance_size_slug: basic-xxs
+    instance_count: 1
+
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 30
+      period_seconds: 15
+      failure_threshold: 3
+
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+
+      - key: PORT
+        value: "8080"
+        scope: RUN_TIME
+
+      # Injected by the managed database below, already SSL-enabled.
+      - key: DATABASE_URL
+        value: ${cricsquad-db.DATABASE_URL}
+        scope: RUN_TIME
+
+      # Required in production — the app refuses to boot without it.
+      # Generate with: openssl rand -base64 48
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+
+      # Optional. Without it, invoice extraction falls back to the deterministic
+      # mock and the manual entry form still works.
+      - key: ANTHROPIC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      - key: ANTHROPIC_MODEL
+        value: claude-opus-5
+        scope: RUN_TIME
+
+      # App Platform's filesystem is ephemeral: uploaded invoices and bank
+      # statements are lost on every redeploy. Fine for a test deployment;
+      # see DEPLOY.md before storing anything you need to keep.
+      - key: UPLOAD_DIR
+        value: /tmp/cricsquad-uploads
+        scope: RUN_TIME
+
+databases:
+  - name: cricsquad-db
+    engine: PG
+    version: "16"
+    size: db-s-1vcpu-1gb
+    num_nodes: 1

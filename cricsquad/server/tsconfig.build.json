@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Emit straight to dist/ so the entry point is dist/index.js. The base
+    // config keeps rootDir at "." because it also typechecks tests/.
+    "rootDir": "./src",
+    "outDir": "dist",
+    "noEmit": false
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests", "prisma"]
+}
