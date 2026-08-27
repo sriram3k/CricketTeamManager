@@ -1,0 +1,910 @@
+<title>Kataliance Website Concepts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Lato:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&family=Archivo:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   CHROME — the pitch shell (theme-aware)
+   ============================================================ */
+:root{
+  --sh-bg:#EDEBE6; --sh-panel:#FFFFFF; --sh-ink:#1B2130; --sh-mute:#6C7183;
+  --sh-line:#D6D2C8; --sh-gold:#9A7A2E; --sh-navy:#12203F;
+}
+:root:not([data-theme="light"]){ }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --sh-bg:#14161C; --sh-panel:#1C1F27; --sh-ink:#E9E6DF; --sh-mute:#989FB0;
+    --sh-line:#2E323C; --sh-gold:#D2AC5A; --sh-navy:#C9D2E6;
+  }
+}
+:root[data-theme="dark"]{
+  --sh-bg:#14161C; --sh-panel:#1C1F27; --sh-ink:#E9E6DF; --sh-mute:#989FB0;
+  --sh-line:#2E323C; --sh-gold:#D2AC5A; --sh-navy:#C9D2E6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sh-bg);color:var(--sh-ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;}
+img{max-width:100%;display:block}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--sh-gold);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.shell-top{position:sticky;top:0;z-index:60;background:var(--sh-panel);
+  border-bottom:1px solid var(--sh-line);}
+.shell-in{max-width:1240px;margin:0 auto;padding:14px 24px;
+  display:flex;align-items:center;gap:28px;flex-wrap:wrap}
+.shell-id{display:flex;flex-direction:column;gap:2px;line-height:1.2}
+.shell-id b{font-size:14px;font-weight:600;letter-spacing:.01em}
+.shell-id span{font-size:11px;color:var(--sh-mute);letter-spacing:.09em;text-transform:uppercase}
+.tabs{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.tab{appearance:none;background:transparent;border:1px solid var(--sh-line);
+  border-radius:2px;padding:9px 15px;cursor:pointer;color:var(--sh-mute);
+  font-family:inherit;font-size:13px;font-weight:500;letter-spacing:.02em;
+  display:flex;align-items:baseline;gap:9px;transition:border-color .18s,color .18s,background .18s}
+.tab i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.75}
+.tab:hover{color:var(--sh-ink);border-color:var(--sh-gold)}
+.tab[aria-selected="true"]{background:var(--sh-navy);color:var(--sh-panel);border-color:var(--sh-navy)}
+:root[data-theme="dark"] .tab[aria-selected="true"],
+.tab[aria-selected="true"]{color:var(--sh-panel)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tab[aria-selected="true"]{color:#14161C}}
+:root[data-theme="dark"] .tab[aria-selected="true"]{color:#14161C}
+
+.shell-note{background:var(--sh-bg);border-bottom:1px solid var(--sh-line)}
+.shell-note-in{max-width:1240px;margin:0 auto;padding:16px 24px 18px;
+  display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+.note-txt{max-width:62ch;font-size:13.5px;line-height:1.62;color:var(--sh-mute)}
+.note-txt b{color:var(--sh-ink);font-weight:600}
+.note-meta{display:flex;gap:26px;flex-wrap:wrap;margin-left:auto;font-size:11px;
+  font-family:"IBM Plex Mono",monospace;color:var(--sh-mute)}
+.note-meta div{display:flex;flex-direction:column;gap:7px}
+.note-meta u{text-decoration:none;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.sw{display:flex;gap:5px}
+.sw i{width:19px;height:19px;border-radius:1px;display:block;border:1px solid rgba(128,128,128,.28)}
+
+.stage{max-width:1240px;margin:0 auto;padding:24px}
+.frame{border:1px solid var(--sh-line);border-radius:3px;overflow:hidden;
+  box-shadow:0 18px 44px -28px rgba(10,16,32,.45)}
+.concept{display:none}
+.concept.on{display:block}
+@media (max-width:720px){ .shell-in{gap:14px} .tabs{margin-left:0;width:100%} .stage{padding:0} .frame{border-left:0;border-right:0;border-radius:0} }
+
+/* ============================================================
+   CONCEPT A — "The Register"
+   classic institutional: engraved, symmetric, catalogue typography
+   ============================================================ */
+.cA{
+  --navy:#0C1730; --navy-soft:#16264A; --gold:#B08D3F; --gold-lt:#CBA85C;
+  --paper:#F4F1E8; --paper-2:#FBFAF5; --rule:#D9D3C1; --ink:#1E2231; --mute:#6C685C;
+  background:var(--paper); color:var(--ink);
+  font-family:"Lato",Helvetica,Arial,sans-serif; font-size:16px; line-height:1.65;
+}
+.cA h1,.cA h2,.cA h3,.cA .disp{font-family:"Cormorant Garamond",Georgia,serif;font-weight:400;
+  letter-spacing:.005em;text-wrap:balance;margin:0}
+.cA .wrap{max-width:1080px;margin:0 auto;padding:0 40px}
+.cA .lbl{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700}
+.cA .rule-c{width:64px;height:1px;background:var(--gold);margin:22px auto}
+.cA .rule-c.dbl{height:3px;background:linear-gradient(var(--gold) 1px,transparent 1px 2px,var(--gold) 2px)}
+
+.cA .nav{background:var(--navy);border-bottom:1px solid rgba(176,141,63,.35)}
+.cA .nav-in{max-width:1080px;margin:0 auto;padding:16px 40px;display:flex;align-items:center;gap:34px}
+.cA .nav img{height:42px;width:auto}
+.cA .nav nav{margin-left:auto;display:flex;gap:30px}
+.cA .nav a{color:#E6E2D6;text-decoration:none;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;padding-bottom:3px;border-bottom:1px solid transparent;transition:border-color .2s,color .2s}
+.cA .nav a:hover{color:#fff;border-color:var(--gold)}
+
+.cA .hero{background:var(--navy);color:#EFEBE0;text-align:center;padding:104px 0 112px;position:relative}
+.cA .hero::after{content:"";position:absolute;inset:22px;border:1px solid rgba(176,141,63,.26);pointer-events:none}
+.cA .hero img{height:132px;width:auto;margin:0 auto 34px}
+.cA .hero h1{font-size:clamp(30px,4.4vw,52px);line-height:1.22;font-weight:300;color:#F6F2E7;max-width:20ch;margin:0 auto}
+.cA .hero h1 em{font-style:italic;color:var(--gold-lt)}
+.cA .hero p{max-width:60ch;margin:26px auto 0;color:#BFC5D3;font-size:15px;line-height:1.8}
+.cA .hero .acts{display:flex;gap:16px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+.cA .btn{display:inline-block;text-decoration:none;font-size:11px;letter-spacing:.2em;
+  text-transform:uppercase;font-weight:700;padding:14px 30px;border:1px solid var(--gold);
+  color:var(--gold-lt);transition:background .2s,color .2s}
+.cA .btn:hover{background:var(--gold);color:var(--navy)}
+.cA .btn.solid{background:var(--gold);color:var(--navy)}
+.cA .btn.solid:hover{background:transparent;color:var(--gold-lt)}
+
+.cA .sect{padding:88px 0}
+.cA .sect.alt{background:var(--paper-2);border-block:1px solid var(--rule)}
+.cA .head{text-align:center;margin-bottom:54px}
+.cA .head h2{font-size:clamp(26px,3.2vw,38px);color:var(--navy);margin-top:14px}
+
+.cA .glance{display:grid;grid-template-columns:1.15fr 1fr;gap:64px;align-items:start}
+.cA .glance p{margin:0 0 20px;color:#3E4354;font-size:15.5px;line-height:1.85}
+.cA .glance p.lead{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;line-height:1.6;color:var(--navy)}
+.cA .facts{border-top:1px solid var(--rule)}
+.cA .facts div{display:flex;justify-content:space-between;align-items:baseline;gap:20px;
+  padding:17px 0;border-bottom:1px solid var(--rule)}
+.cA .facts b{font-family:"Cormorant Garamond",Georgia,serif;font-size:30px;font-weight:600;color:var(--gold);line-height:1}
+.cA .facts span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:right;max-width:30ch;line-height:1.5}
+
+.cA .reg{display:grid;grid-template-columns:1fr 1fr;gap:0 60px}
+.cA .reg article{padding:22px 0;border-bottom:1px solid var(--rule)}
+.cA .reg h3{display:flex;align-items:baseline;gap:12px;font-size:21px;color:var(--navy);font-weight:600}
+.cA .reg h3 span{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--rule) 0 2px,transparent 2px 6px);
+  transform:translateY(-4px)}
+.cA .reg p{margin:9px 0 0;font-size:14px;line-height:1.72;color:var(--mute);max-width:44ch}
+
+.cA .caps{columns:3;column-gap:48px;max-width:900px;margin:0 auto}
+.cA .caps li{break-inside:avoid;list-style:none;padding:11px 0 11px 22px;position:relative;
+  font-size:14.5px;color:#3E4354;border-bottom:1px solid var(--rule)}
+.cA .caps li::before{content:"";position:absolute;left:0;top:19px;width:9px;height:1px;background:var(--gold)}
+.cA .caps{padding:0;margin-inline:auto}
+
+.cA .ptr{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.cA .ptr article{background:var(--paper-2);border:1px solid var(--rule);padding:34px}
+.cA .ptr .top{display:flex;gap:24px;align-items:flex-start;padding-bottom:22px;border-bottom:1px solid var(--rule)}
+.cA .ptr img{width:104px;height:104px;object-fit:cover;object-position:top center;
+  border:1px solid var(--rule);padding:5px;background:#fff;filter:grayscale(1) contrast(1.04)}
+.cA .ptr h3{font-size:26px;color:var(--navy);font-weight:600;line-height:1.15}
+.cA .ptr .qual{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-top:8px;font-weight:700}
+.cA .ptr .role{font-size:13px;color:var(--mute);margin-top:9px;font-style:italic;
+  font-family:"Cormorant Garamond",Georgia,serif;font-size:16px}
+.cA .ptr p{font-size:14px;line-height:1.78;color:#3E4354;margin:18px 0 0}
+.cA .ptr a{font-size:12px;color:var(--navy);letter-spacing:.05em;display:inline-block;margin-top:18px}
+
+.cA .eng{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.cA .eng div{background:var(--paper);padding:34px 28px;text-align:center}
+.cA .eng h3{font-size:23px;color:var(--navy);margin-bottom:10px}
+.cA .eng p{font-size:13.5px;color:var(--mute);margin:0;line-height:1.7}
+
+.cA .foot{background:var(--navy);color:#CFD4E0;padding:76px 0 34px;text-align:center}
+.cA .foot img{height:96px;width:auto;margin:0 auto 26px}
+.cA .foot h2{color:#F6F2E7;font-size:32px;font-weight:300}
+.cA .foot .mails{display:flex;gap:30px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+.cA .foot .mails a{color:var(--gold-lt);text-decoration:none;font-size:14px;border-bottom:1px solid rgba(203,168,92,.4);padding-bottom:2px}
+.cA .foot .cities{margin-top:44px;font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:#8C93A5}
+.cA .foot .fine{margin-top:38px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);
+  font-size:11px;letter-spacing:.05em;color:#6E7488}
+@media (max-width:860px){
+  .cA .glance,.cA .reg,.cA .ptr,.cA .eng{grid-template-columns:1fr;gap:32px}
+  .cA .eng{gap:1px}
+  .cA .caps{columns:1}
+  .cA .wrap,.cA .nav-in{padding-inline:22px}
+  .cA .nav nav{display:none}
+}
+</style>
+<style>
+/* ============================================================
+   CONCEPT B — "The Filing Desk"
+   modern advisory: asymmetric, systematic, built around the
+   statutory calendar a CS actually runs
+   ============================================================ */
+.cB{
+  --navy:#132443; --navy-2:#1D3160; --ink:#182034; --slate:#5A657E;
+  --paper:#EEF1F5; --card:#FFFFFF; --line:#DCE1E9; --gold:#9C7A28; --gold-lt:#C9A24A;
+  background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,sans-serif; font-size:16px; line-height:1.62;
+}
+.cB h1,.cB h2,.cB h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;
+  letter-spacing:-.012em;text-wrap:balance;margin:0;line-height:1.18}
+.cB .wrap{max-width:1140px;margin:0 auto;padding:0 40px}
+.cB .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+.cB .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gold);display:flex;align-items:center;gap:10px}
+.cB .eyebrow::before{content:"";width:26px;height:1px;background:var(--gold);flex:none}
+
+.cB .nav{background:var(--card);border-bottom:1px solid var(--line);position:relative;z-index:5}
+.cB .nav-in{max-width:1140px;margin:0 auto;padding:15px 40px;display:flex;align-items:center;gap:20px}
+.cB .nav img{height:38px;width:auto}
+.cB .nav nav{margin-left:auto;display:flex;gap:28px;align-items:center}
+.cB .nav a{color:var(--slate);text-decoration:none;font-size:13.5px;font-weight:500;transition:color .18s}
+.cB .nav a:hover{color:var(--navy)}
+.cB .nav .cta{background:var(--navy);color:#fff;padding:10px 20px;border-radius:2px;font-size:13px}
+.cB .nav .cta:hover{background:var(--navy-2);color:#fff}
+
+.cB .hero{background:var(--card);border-bottom:1px solid var(--line);padding:74px 0 78px}
+.cB .hero-in{max-width:1140px;margin:0 auto;padding:0 40px;
+  display:grid;grid-template-columns:1.05fr .95fr;gap:70px;align-items:center}
+.cB .hero h1{font-size:clamp(32px,4vw,50px);color:var(--navy);margin-top:22px}
+.cB .hero h1 span{color:var(--gold)}
+.cB .hero p{font-size:16.5px;line-height:1.75;color:var(--slate);max-width:52ch;margin:22px 0 0}
+.cB .hero .acts{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+.cB .btn{display:inline-block;text-decoration:none;font-size:14px;font-weight:500;
+  padding:13px 26px;border-radius:2px;transition:background .18s,color .18s,border-color .18s}
+.cB .btn.p{background:var(--navy);color:#fff}
+.cB .btn.p:hover{background:var(--navy-2)}
+.cB .btn.s{border:1px solid var(--line);color:var(--navy)}
+.cB .btn.s:hover{border-color:var(--navy)}
+
+.cB .filings{background:var(--paper);border:1px solid var(--line);border-radius:3px;padding:26px}
+.cB .filings h4{margin:0 0 4px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--slate);font-weight:500}
+.cB .filings .sub{font-size:12.5px;color:var(--slate);margin:0 0 18px}
+.cB .filings ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;
+  background:var(--line);border-block:1px solid var(--line)}
+.cB .filings li{background:var(--card);display:grid;grid-template-columns:auto 1fr auto;
+  gap:14px;align-items:center;padding:11px 14px}
+.cB .filings code{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+  color:var(--navy);background:rgba(19,36,67,.06);padding:3px 7px;border-radius:2px;min-width:74px;text-align:center}
+.cB .filings em{font-style:normal;font-size:13px;color:var(--ink)}
+.cB .filings i{font-style:normal;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  color:var(--slate);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cB .filings .fnote{font-size:11.5px;color:var(--slate);margin:16px 0 0;line-height:1.55}
+
+.cB .sect{padding:82px 0}
+.cB .sect.card{background:var(--card);border-block:1px solid var(--line)}
+.cB .head{max-width:60ch;margin-bottom:44px}
+.cB .head h2{font-size:clamp(25px,3vw,34px);color:var(--navy);margin-top:14px}
+.cB .head p{color:var(--slate);font-size:15.5px;margin:14px 0 0;line-height:1.75}
+
+.cB .prac{border-top:1px solid var(--line)}
+.cB .prac details{border-bottom:1px solid var(--line)}
+.cB .prac summary{list-style:none;cursor:pointer;padding:20px 4px;
+  display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;transition:padding-left .2s}
+.cB .prac summary::-webkit-details-marker{display:none}
+.cB .prac summary:hover{padding-left:10px}
+.cB .prac summary h3{font-size:20px;color:var(--navy)}
+.cB .prac summary .mk{width:22px;height:22px;position:relative;flex:none}
+.cB .prac summary .mk::before,.cB .prac summary .mk::after{content:"";position:absolute;
+  background:var(--gold);transition:transform .22s}
+.cB .prac summary .mk::before{left:0;top:10px;width:22px;height:1.5px}
+.cB .prac summary .mk::after{left:10px;top:0;width:1.5px;height:22px}
+.cB .prac details[open] summary .mk::after{transform:scaleY(0)}
+.cB .prac .body{padding:0 4px 24px;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:start}
+.cB .prac .body p{margin:0;color:var(--slate);font-size:14.5px;line-height:1.78;max-width:62ch}
+.cB .prac .body .tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:280px}
+.cB .prac .body .tags span{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--slate);border:1px solid var(--line);padding:4px 8px;border-radius:2px;white-space:nowrap}
+
+.cB .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.cB .caps li{list-style:none;background:var(--card);padding:20px 22px;font-size:14.5px;
+  color:var(--ink);display:flex;gap:12px;align-items:flex-start;line-height:1.55}
+.cB .caps li::before{content:"";width:6px;height:6px;background:var(--gold);flex:none;margin-top:7px;border-radius:50%}
+.cB .caps{padding:0;margin:0}
+
+.cB .ptr{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.cB .ptr article{background:var(--card);border:1px solid var(--line);border-radius:3px;
+  padding:30px;display:flex;flex-direction:column;gap:18px}
+.cB .ptr .top{display:flex;gap:18px;align-items:center}
+.cB .ptr img{width:82px;height:82px;border-radius:50%;object-fit:cover;object-position:top center;flex:none}
+.cB .ptr h3{font-size:21px;color:var(--navy)}
+.cB .ptr .qual{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--gold);margin-top:5px;letter-spacing:.06em}
+.cB .ptr .role{font-size:13px;color:var(--slate);margin-top:6px}
+.cB .ptr p{margin:0;font-size:14.5px;line-height:1.76;color:var(--slate)}
+.cB .ptr a{margin-top:auto;font-size:13.5px;color:var(--navy);font-weight:500;text-decoration:none;
+  border-bottom:1px solid var(--gold);align-self:flex-start;padding-bottom:2px}
+
+.cB .eng{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.cB .eng div{background:var(--paper);border:1px solid var(--line);border-top:2px solid var(--gold);
+  border-radius:2px;padding:26px}
+.cB .eng h3{font-size:19px;color:var(--navy);margin-bottom:9px}
+.cB .eng p{margin:0;font-size:14px;color:var(--slate);line-height:1.7}
+
+.cB .contact{background:var(--navy);color:#DCE3F0;padding:70px 0}
+.cB .contact-in{max-width:1140px;margin:0 auto;padding:0 40px;
+  display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.cB .contact h2{color:#fff;font-size:clamp(25px,3vw,34px)}
+.cB .contact p{color:#A9B4CA;font-size:15.5px;line-height:1.75;margin:16px 0 0;max-width:44ch}
+.cB .contact .rows{display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+.cB .contact .rows a,.cB .contact .rows div{background:var(--navy);padding:15px 20px;
+  display:flex;justify-content:space-between;gap:18px;align-items:center;
+  text-decoration:none;color:#DCE3F0;font-size:14px;transition:background .18s}
+.cB .contact .rows a:hover{background:var(--navy-2)}
+.cB .contact .rows u{text-decoration:none;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:#8D9AB6}
+.cB .foot{background:var(--navy);border-top:1px solid rgba(255,255,255,.1);padding:22px 0;color:#8D9AB6;font-size:12px}
+.cB .foot-in{max-width:1140px;margin:0 auto;padding:0 40px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+@media (max-width:900px){
+  .cB .hero-in,.cB .ptr,.cB .eng,.cB .contact-in{grid-template-columns:1fr;gap:36px}
+  .cB .caps{grid-template-columns:1fr}
+  .cB .prac .body{grid-template-columns:1fr}
+  .cB .prac .body .tags{justify-content:flex-start;max-width:none}
+  .cB .wrap,.cB .nav-in,.cB .hero-in,.cB .contact-in,.cB .foot-in{padding-inline:22px}
+  .cB .nav nav a:not(.cta){display:none}
+}
+
+/* ============================================================
+   CONCEPT C — "Counsel After Dark"
+   dark editorial: oversized Bodoni, hairline grid, hover-reveal
+   ============================================================ */
+.cC{
+  --bg:#070C18; --bg-2:#0D1526; --panel:#111A2E; --gold:#D4A94F; --gold-d:#8F7231;
+  --bone:#E9E5DB; --dim:#8F98AC; --line:rgba(212,169,79,.22);
+  background:var(--bg); color:var(--bone);
+  font-family:"Archivo",Helvetica,Arial,sans-serif; font-size:16px; line-height:1.6;
+}
+.cC h1,.cC h2,.cC h3,.cC .disp{font-family:"Bodoni Moda",Didot,Georgia,serif;font-weight:400;
+  margin:0;text-wrap:balance;line-height:1.08}
+.cC .wrap{max-width:1200px;margin:0 auto;padding:0 44px}
+.cC .kicker{font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600}
+
+.cC .nav{position:relative;z-index:5;border-bottom:1px solid var(--line)}
+.cC .nav-in{max-width:1200px;margin:0 auto;padding:18px 44px;display:flex;align-items:center;gap:24px}
+.cC .nav img{height:34px;width:auto}
+.cC .nav nav{margin-left:auto;display:flex;gap:32px}
+.cC .nav a{color:var(--dim);text-decoration:none;font-size:12px;letter-spacing:.15em;
+  text-transform:uppercase;font-weight:500;transition:color .2s}
+.cC .nav a:hover{color:var(--gold)}
+
+.cC .hero{position:relative;padding:110px 0 90px;overflow:hidden}
+.cC .hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/ calc(100%/6) 100%,
+    radial-gradient(120% 80% at 78% 8%, rgba(212,169,79,.13), transparent 62%);
+  opacity:.9}
+.cC .hero-in{position:relative;max-width:1200px;margin:0 auto;padding:0 44px}
+.cC .hero h1{font-size:clamp(44px,8.4vw,116px);letter-spacing:-.02em;margin-top:26px}
+.cC .hero h1 em{font-style:italic;color:var(--gold)}
+.cC .hero .row{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin-top:52px;align-items:end}
+.cC .hero p{margin:0;color:var(--dim);font-size:16px;line-height:1.85;max-width:50ch}
+.cC .hero .meta{display:grid;grid-template-columns:repeat(3,auto);gap:36px;justify-content:end}
+.cC .hero .meta div{text-align:right}
+.cC .hero .meta b{display:block;font-family:"Bodoni Moda",Georgia,serif;font-size:34px;color:var(--gold);font-weight:400}
+.cC .hero .meta span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+
+.cC .ticker{border-block:1px solid var(--line);background:var(--bg-2);overflow:hidden;padding:13px 0}
+.cC .ticker-in{display:flex;gap:44px;white-space:nowrap;animation:cC-slide 34s linear infinite;width:max-content}
+.cC .ticker span{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+.cC .ticker span::after{content:"·";margin-left:44px;color:var(--gold)}
+@keyframes cC-slide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.cC .ticker-in{animation:none;white-space:normal;flex-wrap:wrap;width:auto}}
+
+.cC .sect{padding:96px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.cC .head{display:grid;grid-template-columns:auto 1fr;gap:44px;align-items:baseline;margin-bottom:52px}
+.cC .head h2{font-size:clamp(30px,4.4vw,54px)}
+.cC .head p{margin:0;color:var(--dim);font-size:15px;line-height:1.8;max-width:46ch;justify-self:end}
+
+.cC .prac{border-top:1px solid rgba(255,255,255,.09)}
+.cC .prac article{border-bottom:1px solid rgba(255,255,255,.09);position:relative}
+.cC .prac .r{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:44px;
+  align-items:center;padding:26px 20px;transition:background .25s,padding-left .25s}
+.cC .prac article:hover .r{background:var(--panel);padding-left:32px}
+.cC .prac h3{font-size:clamp(22px,2.6vw,32px);transition:color .25s}
+.cC .prac article:hover h3{color:var(--gold)}
+.cC .prac p{margin:0;color:var(--dim);font-size:14px;line-height:1.75;
+  opacity:.55;transition:opacity .25s}
+.cC .prac article:hover p{opacity:1}
+
+.cC .caps{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.cC .caps li{list-style:none;padding:22px 26px 22px 0;border-top:1px solid rgba(255,255,255,.08);
+  font-size:15px;color:var(--bone);display:flex;gap:14px;align-items:flex-start;line-height:1.5}
+.cC .caps li::before{content:"—";color:var(--gold-d);flex:none}
+.cC .caps{padding:0;margin:0}
+
+.cC .ptr{display:grid;grid-template-columns:1fr 1fr;gap:56px}
+.cC .ptr .top{display:flex;gap:22px;align-items:flex-end;padding-bottom:20px;
+  border-bottom:1px solid var(--line);margin-bottom:22px}
+.cC .ptr img{width:112px;height:126px;object-fit:cover;object-position:top center;flex:none;
+  filter:grayscale(1) contrast(1.12) brightness(.96);border:1px solid var(--line)}
+.cC .ptr h3{font-size:30px}
+.cC .ptr .qual{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-top:10px}
+.cC .ptr .role{font-size:13px;color:var(--dim);margin-top:8px}
+.cC .ptr p{margin:0 0 14px;color:var(--dim);font-size:14.5px;line-height:1.8}
+.cC .ptr a{color:var(--gold);text-decoration:none;font-size:13px;letter-spacing:.06em;
+  border-bottom:1px solid var(--gold-d);padding-bottom:2px}
+
+.cC .eng{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--line)}
+.cC .eng div{padding:32px 30px 32px 0;border-right:1px solid rgba(255,255,255,.08)}
+.cC .eng div:last-child{border-right:0}
+.cC .eng h3{font-size:26px;margin-bottom:12px}
+.cC .eng p{margin:0;color:var(--dim);font-size:14px;line-height:1.72}
+
+.cC .cta-band{padding:110px 0;text-align:center;position:relative;overflow:hidden}
+.cC .cta-band::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(70% 120% at 50% 110%, rgba(212,169,79,.16), transparent 60%)}
+.cC .cta-band .in{position:relative}
+.cC .cta-band img{height:104px;width:auto;margin:0 auto 30px}
+.cC .cta-band h2{font-size:clamp(32px,5.4vw,64px)}
+.cC .cta-band h2 em{font-style:italic;color:var(--gold)}
+.cC .mails{display:flex;gap:34px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.cC .mails a{color:var(--bone);text-decoration:none;font-size:14.5px;
+  border-bottom:1px solid var(--gold-d);padding-bottom:3px;transition:color .2s}
+.cC .mails a:hover{color:var(--gold)}
+.cC .foot{border-top:1px solid var(--line);padding:26px 0}
+.cC .foot-in{max-width:1200px;margin:0 auto;padding:0 44px;display:flex;
+  justify-content:space-between;gap:20px;flex-wrap:wrap;font-size:11px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+@media (max-width:900px){
+  .cC .hero .row,.cC .ptr,.cC .head{grid-template-columns:1fr;gap:30px}
+  .cC .hero .meta{grid-template-columns:repeat(3,auto);justify-content:start;gap:24px}
+  .cC .hero .meta div{text-align:left}
+  .cC .prac .r{grid-template-columns:1fr;gap:12px;padding-inline:0}
+  .cC .prac p{opacity:1}
+  .cC .caps,.cC .eng{grid-template-columns:1fr}
+  .cC .eng div{border-right:0;border-bottom:1px solid rgba(255,255,255,.08);padding-right:0}
+  .cC .wrap,.cC .nav-in,.cC .hero-in,.cC .foot-in{padding-inline:22px}
+  .cC .nav nav{display:none}
+}
+</style>
+
+<header class="shell-top">
+  <div class="shell-in">
+    <div class="shell-id">
+      <b>Kataliance Partners LLP</b>
+      <span>Website design directions</span>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Design directions">
+      <button class="tab" role="tab" id="tab-A" aria-controls="cA" aria-selected="true"><i>A</i>The Register</button>
+      <button class="tab" role="tab" id="tab-B" aria-controls="cB" aria-selected="false"><i>B</i>The Filing Desk</button>
+      <button class="tab" role="tab" id="tab-C" aria-controls="cC" aria-selected="false"><i>C</i>Counsel</button>
+    </div>
+  </div>
+</header>
+
+<div class="shell-note">
+  <div class="shell-note-in">
+    <p class="note-txt" id="note"></p>
+    <div class="note-meta">
+      <div><u>Palette</u><span class="sw" id="sw"></span></div>
+      <div><u>Type</u><span id="ty"></span></div>
+      <div><u>Reads as</u><span id="rd"></span></div>
+    </div>
+  </div>
+</div>
+
+<main class="stage">
+  <div class="frame">
+
+  <!-- ============ CONCEPT A ============ -->
+  <div class="concept cA on" id="cA" role="tabpanel" aria-labelledby="tab-A">
+    <div class="nav"><div class="nav-in">
+      <img src="__LOGOLIGHT__" alt="Kataliance Partners LLP">
+      <nav><a href="#">The Firm</a><a href="#">Expertise</a><a href="#">Partners</a><a href="#">Insights</a><a href="#">Contact</a></nav>
+    </div></div>
+
+    <section class="hero">
+      <img src="__MONOLIGHT__" alt="">
+      <h1>Integrated legal, secretarial and <em>financial</em> solutions</h1>
+      <p>Kataliance Partners LLP brings precision, clarity and strategic perspective to every mandate — with the depth of a full-service practice and the agility of a focused team.</p>
+      <div class="acts">
+        <a class="btn solid" href="#">Request a consultation</a>
+        <a class="btn" href="#">View our expertise</a>
+      </div>
+    </section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><span class="lbl">The Firm</span><h2>At a glance</h2><div class="rule-c dbl"></div></div>
+      <div class="glance">
+        <div>
+          <p class="lead">An integrated legal, secretarial and financial advisory firm, delivering comprehensive solutions under one roof.</p>
+          <p>We bring precision, clarity and strategic perspective to every mandate — spanning corporate and company law, secretarial compliance, regulatory and governance advisory, civil and commercial laws, taxation and financial consulting, due diligence and transaction support, contract management and legal documentation, litigation support and dispute resolution, and business structuring and strategic advisory.</p>
+          <p>Kataliance Partners translates complex regulatory frameworks into practical, outcome-focused solutions — serving startups, family offices, established corporates and high-growth businesses across sectors.</p>
+        </div>
+        <div class="facts">
+          <div><b>12+</b><span>Years in governance &amp; secretarial practice</span></div>
+          <div><b>9+</b><span>Years of practice at the Madras High Court</span></div>
+          <div><b>03</b><span>Offices — Chennai, Bangalore, Delhi</span></div>
+          <div><b>09</b><span>Capability areas under one roof</span></div>
+        </div>
+      </div>
+    </div></section>
+
+    <section class="sect alt"><div class="wrap">
+      <div class="head"><span class="lbl">Expertise Deep Dive</span><h2>Our footprint</h2><div class="rule-c dbl"></div></div>
+      <div class="reg">
+        <article><h3>Corporate Secretarial &amp; Governance<span></span></h3><p>Compliance around board meetings and general meetings, ESOP structuring, and annual compliance.</p></article>
+        <article><h3>Legal &amp; Contract Management<span></span></h3><p>Contract drafting, agreements, MSAs, MoUs, franchise agreements and negotiation.</p></article>
+        <article><h3>Investment Transactions &amp; Securities<span></span></h3><p>Issue of equity, CCPS, CCDs, OCDs and convertible notes, due diligence, investment agreements and compliances.</p></article>
+        <article><h3>Real Estate<span></span></h3><p>Title scrutiny, commercial documentation and registration.</p></article>
+        <article><h3>FEMA &amp; Cross-Border Compliance<span></span></h3><p>Foreign investment structuring, FC-GPR, FC-TRS and FLA reporting, and event-based FEMA submissions.</p></article>
+        <article><h3>Intellectual Property<span></span></h3><p>Advisory and enforcement.</p></article>
+        <article><h3>Entity Structuring &amp; Due Diligence<span></span></h3><p>Incorporation of entities — private limited, LLP, OPC, Section 8, AIF and partnership firms.</p></article>
+        <article><h3>Litigation Support &amp; Dispute Resolution<span></span></h3><p>NCLT, civil, commercial, consumer and taxation disputes.</p></article>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><span class="lbl">Capabilities</span><h2>What we practise</h2><div class="rule-c"></div></div>
+      <ul class="caps">
+        <li>Corporate Laws</li>
+        <li>Company Law and Secretarial Compliance</li>
+        <li>Civil and Commercial Laws</li>
+        <li>Regulatory and Governance Advisory</li>
+        <li>Taxation and Financial Consulting</li>
+        <li>Due Diligence and Transaction Support</li>
+        <li>Contract Management and Legal Documentation</li>
+        <li>Litigation Support and Dispute Resolution</li>
+        <li>Business Structuring and Strategic Advisory</li>
+      </ul>
+    </div></section>
+
+    <section class="sect alt"><div class="wrap">
+      <div class="head"><span class="lbl">The Partners</span><h2>Who you work with</h2><div class="rule-c dbl"></div></div>
+      <div class="ptr">
+        <article>
+          <div class="top">
+            <img src="__AHONA__" alt="Ahona Das Gupta">
+            <div>
+              <h3>Ahona Das Gupta</h3>
+              <div class="qual">B.Com · CS · MBL</div>
+              <div class="role">Founding Partner &amp; Company Secretary</div>
+            </div>
+          </div>
+          <p>Twelve years across corporate governance, FEMA compliance and investment structuring, with a proven track record as KMP, compliance SPOC and Legal Head — having led secretarial functions for companies ranging from high-growth startups to publicly listed entities.</p>
+          <p>Her advisory practice is centred on strengthening governance structures, facilitating complex transactions, and turning regulatory complexity into practical business outcomes.</p>
+          <a href="mailto:Ahona@kpllp.in">Ahona@kpllp.in</a>
+        </article>
+        <article>
+          <div class="top">
+            <img src="__MUDIT__" alt="Mudit Bohara">
+            <div>
+              <h3>Mudit Bohara</h3>
+              <div class="qual">B.A. B.L (Hons)</div>
+              <div class="role">Consulting Partner</div>
+            </div>
+          </div>
+          <p>Over nine years of practice at the Madras High Court, leading dispute resolution, litigation, direct and indirect taxes and intellectual property. Extensive experience in civil, corporate and commercial litigation, arbitration and advisory.</p>
+          <p>Mudit is a member of the Bar Council of Tamil Nadu and Puducherry, and has previously worked with Transcorporate Legal Services and Peritum Partners.</p>
+          <a href="mailto:mudit@kpllp.in">mudit@kpllp.in</a>
+        </article>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><span class="lbl">Engagement</span><h2>How we work with you</h2><div class="rule-c"></div></div>
+      <div class="eng">
+        <div><h3>Retainer</h3><p>Ongoing secretarial and compliance cover, with a named partner accountable for your statutory calendar.</p></div>
+        <div><h3>Advisory</h3><p>Counsel on a defined question — governance, structuring, FEMA or a transaction in motion.</p></div>
+        <div><h3>Project-based</h3><p>A mandate with a beginning and an end: an incorporation, a funding round, a due diligence.</p></div>
+      </div>
+    </div></section>
+
+    <footer class="foot"><div class="wrap">
+      <img src="__MONOLIGHT__" alt="">
+      <h2>Available for retainer, advisory<br>and project-based mandates</h2>
+      <div class="mails">
+        <a href="mailto:Ahona@kpllp.in">Ahona@kpllp.in</a>
+        <a href="mailto:mudit@kpllp.in">mudit@kpllp.in</a>
+        <a href="mailto:contactkpllp@gmail.com">contactkpllp@gmail.com</a>
+      </div>
+      <div class="cities">Chennai · Bangalore · Delhi</div>
+      <div class="fine">© 2026 Kataliance Partners LLP · www.kataliance.in</div>
+    </div></footer>
+  </div>
+
+  <!-- ============ CONCEPT B ============ -->
+  <div class="concept cB" id="cB" role="tabpanel" aria-labelledby="tab-B" hidden>
+    <div class="nav"><div class="nav-in">
+      <img src="__LOGO__" alt="Kataliance Partners LLP">
+      <nav><a href="#">Firm</a><a href="#">Services</a><a href="#">Partners</a><a href="#">Engagement</a><a class="cta" href="#">Book a call</a></nav>
+    </div></div>
+
+    <section class="hero"><div class="hero-in">
+      <div>
+        <div class="eyebrow">Integrated legal · secretarial · financial</div>
+        <h1>Your compliance calendar, <span>handled end to end.</span></h1>
+        <p>Kataliance Partners LLP is an integrated legal, secretarial and financial advisory firm. We translate complex regulatory frameworks into practical, outcome-focused solutions — for startups, family offices, established corporates and high-growth businesses.</p>
+        <div class="acts">
+          <a class="btn p" href="#">Book a 30-minute call</a>
+          <a class="btn s" href="#">See what we handle</a>
+        </div>
+      </div>
+      <div class="filings">
+        <h4>What we run for you</h4>
+        <p class="sub">A live view of the statutory calendar we own on your behalf.</p>
+        <ul>
+          <li><code>FC-GPR</code><em>Foreign investment reporting</em><i>30 days of allotment</i></li>
+          <li><code>FC-TRS</code><em>Transfer of shares, resident ↔ non-resident</em><i>60 days</i></li>
+          <li><code>FLA</code><em>Annual return on foreign liabilities</em><i>15 July</i></li>
+          <li><code>MGT-7</code><em>Annual return</em><i>60 days of AGM</i></li>
+          <li><code>AOC-4</code><em>Financial statements</em><i>30 days of AGM</i></li>
+          <li><code>DIR-3 KYC</code><em>Director KYC</em><i>30 September</i></li>
+          <li><code>PAS-3</code><em>Return of allotment</em><i>15 days</i></li>
+        </ul>
+        <p class="fnote">Board and general meetings, statutory registers, ESOP grants and event-based FEMA submissions run on the same calendar.</p>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Services</div>
+        <h2>Eight practice areas, one accountable team</h2>
+        <p>Full-service depth with the agility of a focused firm. Expand any area to see what it covers in practice.</p>
+      </div>
+      <div class="prac">
+        <details open>
+          <summary><h3>Corporate Secretarial &amp; Governance</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Compliance around board meetings and general meetings, ESOP structuring and annual compliance — including statutory registers, minutes, resolutions and the full MCA filing cycle.</p>
+            <div class="tags"><span>Board &amp; AGM</span><span>ESOP</span><span>Annual filings</span><span>Registers</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Investment Transactions &amp; Securities</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Issue of equity, CCPS, CCDs, OCDs and convertible notes; due diligence, investment agreements and the post-closing compliances that follow a round.</p>
+            <div class="tags"><span>CCPS / CCD</span><span>SAFE &amp; notes</span><span>Term sheets</span><span>PAS-3</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>FEMA &amp; Cross-Border Compliance</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Foreign investment structuring, reporting through FC-GPR, FC-TRS and FLA, and event-based FEMA submissions — with the RBI correspondence handled for you.</p>
+            <div class="tags"><span>FDI structuring</span><span>FC-GPR</span><span>FC-TRS</span><span>FLA</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Entity Structuring &amp; Due Diligence</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Incorporation of private limited companies, LLPs, OPCs, Section 8 companies, AIFs and partnership firms — chosen for how you intend to raise, operate and exit.</p>
+            <div class="tags"><span>Pvt Ltd</span><span>LLP</span><span>Section 8</span><span>AIF</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Legal &amp; Contract Management</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Contract drafting and negotiation across MSAs, MoUs, franchise agreements and commercial arrangements — plus the review cadence to keep a contract stack current.</p>
+            <div class="tags"><span>MSA</span><span>MoU</span><span>Franchise</span><span>Negotiation</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Litigation Support &amp; Dispute Resolution</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>NCLT, civil, commercial, consumer and taxation disputes, led from the Madras High Court with arbitration and pre-litigation advisory alongside.</p>
+            <div class="tags"><span>NCLT</span><span>Commercial</span><span>Tax</span><span>Arbitration</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Real Estate</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Title scrutiny, commercial documentation and registration for acquisitions, leases and development arrangements.</p>
+            <div class="tags"><span>Title scrutiny</span><span>Leases</span><span>Registration</span></div>
+          </div>
+        </details>
+        <details>
+          <summary><h3>Intellectual Property</h3><span class="mk"></span></summary>
+          <div class="body">
+            <p>Advisory and enforcement — protecting the marks and works that carry your brand, and acting when they are infringed.</p>
+            <div class="tags"><span>Advisory</span><span>Enforcement</span></div>
+          </div>
+        </details>
+      </div>
+    </div></section>
+
+    <section class="sect card"><div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Capabilities</div>
+        <h2>The full range under one roof</h2>
+      </div>
+      <ul class="caps">
+        <li>Corporate Laws</li>
+        <li>Company Law and Secretarial Compliance</li>
+        <li>Civil and Commercial Laws</li>
+        <li>Regulatory and Governance Advisory</li>
+        <li>Taxation and Financial Consulting</li>
+        <li>Due Diligence and Transaction Support</li>
+        <li>Contract Management and Legal Documentation</li>
+        <li>Litigation Support and Dispute Resolution</li>
+        <li>Business Structuring and Strategic Advisory</li>
+      </ul>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Partners</div>
+        <h2>You work with the partners, not a queue</h2>
+      </div>
+      <div class="ptr">
+        <article>
+          <div class="top">
+            <img src="__AHONA__" alt="Ahona Das Gupta">
+            <div>
+              <h3>Ahona Das Gupta</h3>
+              <div class="qual">B.Com · CS · MBL</div>
+              <div class="role">Founding Partner &amp; Company Secretary</div>
+            </div>
+          </div>
+          <p>Twelve years across corporate governance, FEMA compliance and investment structuring, with a track record as KMP, compliance SPOC and Legal Head — having led secretarial functions for companies from high-growth startups to publicly listed entities. Her practice centres on strengthening governance structures and facilitating complex transactions.</p>
+          <a href="mailto:Ahona@kpllp.in">Ahona@kpllp.in</a>
+        </article>
+        <article>
+          <div class="top">
+            <img src="__MUDIT__" alt="Mudit Bohara">
+            <div>
+              <h3>Mudit Bohara</h3>
+              <div class="qual">B.A. B.L (Hons)</div>
+              <div class="role">Consulting Partner</div>
+            </div>
+          </div>
+          <p>Over nine years of practice at the Madras High Court, leading dispute resolution, litigation, direct and indirect taxes and intellectual property. Extensive experience in civil, corporate and commercial litigation and arbitration. A member of the Bar Council of Tamil Nadu and Puducherry; previously with Transcorporate Legal Services and Peritum Partners.</p>
+          <a href="mailto:mudit@kpllp.in">mudit@kpllp.in</a>
+        </article>
+      </div>
+    </div></section>
+
+    <section class="sect card"><div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Engagement</div>
+        <h2>Three ways to bring us in</h2>
+      </div>
+      <div class="eng">
+        <div><h3>Retainer</h3><p>Ongoing secretarial and compliance cover, with a named partner accountable for your statutory calendar.</p></div>
+        <div><h3>Advisory</h3><p>Counsel on a defined question — governance, structuring, FEMA or a transaction already in motion.</p></div>
+        <div><h3>Project-based</h3><p>A mandate with a start and a finish: an incorporation, a funding round, a due diligence exercise.</p></div>
+      </div>
+    </div></section>
+
+    <section class="contact"><div class="contact-in">
+      <div>
+        <h2>Tell us what's on your compliance calendar.</h2>
+        <p>Available for retainer, advisory and project-based mandates across Chennai, Bangalore and Delhi.</p>
+      </div>
+      <div class="rows">
+        <a href="mailto:Ahona@kpllp.in"><u>Ahona Das Gupta</u><span>Ahona@kpllp.in</span></a>
+        <a href="mailto:mudit@kpllp.in"><u>Mudit Bohara</u><span>mudit@kpllp.in</span></a>
+        <a href="mailto:contactkpllp@gmail.com"><u>General enquiries</u><span>contactkpllp@gmail.com</span></a>
+        <div><u>Offices</u><span>Chennai · Bangalore · Delhi</span></div>
+      </div>
+    </div></section>
+    <div class="foot"><div class="foot-in"><span>© 2026 Kataliance Partners LLP</span><span>www.kataliance.in</span></div></div>
+  </div>
+
+  <!-- ============ CONCEPT C ============ -->
+  <div class="concept cC" id="cC" role="tabpanel" aria-labelledby="tab-C" hidden>
+    <div class="nav"><div class="nav-in">
+      <img src="__LOGOLIGHT__" alt="Kataliance Partners LLP">
+      <nav><a href="#">Firm</a><a href="#">Practice</a><a href="#">Partners</a><a href="#">Contact</a></nav>
+    </div></div>
+
+    <section class="hero"><div class="hero-in">
+      <div class="kicker">Kataliance Partners LLP · Chennai · Bangalore · Delhi</div>
+      <h1>Regulatory complexity,<br><em>answered plainly.</em></h1>
+      <div class="row">
+        <p>An integrated legal, secretarial and financial advisory firm — corporate and company law, governance, FEMA, taxation, transactions and disputes, held together by two partners who take the call themselves.</p>
+        <div class="meta">
+          <div><b>12+</b><span>Years, governance &amp; secretarial</span></div>
+          <div><b>9+</b><span>Years, Madras High Court</span></div>
+          <div><b>03</b><span>Offices</span></div>
+        </div>
+      </div>
+    </div></section>
+
+    <div class="ticker"><div class="ticker-in">
+      <span>Corporate Laws</span><span>Secretarial Compliance</span><span>FEMA</span><span>Due Diligence</span><span>NCLT</span><span>Taxation</span><span>Intellectual Property</span><span>Contract Management</span>
+      <span>Corporate Laws</span><span>Secretarial Compliance</span><span>FEMA</span><span>Due Diligence</span><span>NCLT</span><span>Taxation</span><span>Intellectual Property</span><span>Contract Management</span>
+    </div></div>
+
+    <section class="sect"><div class="wrap">
+      <div class="head">
+        <h2>The firm</h2>
+        <p>Kataliance Partners LLP delivers comprehensive legal, secretarial and financial solutions under one roof — the depth of a full-service practice with the agility of a focused team, serving startups, family offices, established corporates and high-growth businesses across sectors.</p>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><h2>Practice</h2><p>Eight areas. Hover to read what each covers in practice.</p></div>
+      <div class="prac">
+        <article><div class="r"><h3>Corporate Secretarial &amp; Governance</h3><p>Board and general meeting compliance, ESOP structuring, annual compliance, statutory registers and the full MCA filing cycle.</p></div></article>
+        <article><div class="r"><h3>Investment Transactions &amp; Securities</h3><p>Equity, CCPS, CCDs, OCDs and convertible notes; due diligence, investment agreements and post-closing compliances.</p></div></article>
+        <article><div class="r"><h3>FEMA &amp; Cross-Border</h3><p>Foreign investment structuring, FC-GPR, FC-TRS and FLA reporting, and event-based FEMA submissions.</p></div></article>
+        <article><div class="r"><h3>Entity Structuring &amp; Due Diligence</h3><p>Incorporation of private limited companies, LLPs, OPCs, Section 8 companies, AIFs and partnership firms.</p></div></article>
+        <article><div class="r"><h3>Legal &amp; Contract Management</h3><p>Contract drafting, MSAs, MoUs, franchise agreements and negotiation across your commercial stack.</p></div></article>
+        <article><div class="r"><h3>Litigation &amp; Dispute Resolution</h3><p>NCLT, civil, commercial, consumer and taxation disputes, with arbitration and pre-litigation advisory.</p></div></article>
+        <article><div class="r"><h3>Real Estate</h3><p>Title scrutiny, commercial documentation and registration.</p></div></article>
+        <article><div class="r"><h3>Intellectual Property</h3><p>Advisory and enforcement.</p></div></article>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><h2>Capabilities</h2><p>The nine disciplines every mandate is drawn from.</p></div>
+      <ul class="caps">
+        <li>Corporate Laws</li>
+        <li>Company Law and Secretarial Compliance</li>
+        <li>Civil and Commercial Laws</li>
+        <li>Regulatory and Governance Advisory</li>
+        <li>Taxation and Financial Consulting</li>
+        <li>Due Diligence and Transaction Support</li>
+        <li>Contract Management and Legal Documentation</li>
+        <li>Litigation Support and Dispute Resolution</li>
+        <li>Business Structuring and Strategic Advisory</li>
+      </ul>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><h2>Partners</h2><p>Two practitioners, one accountable relationship.</p></div>
+      <div class="ptr">
+        <article>
+          <div class="top">
+            <img src="__AHONA__" alt="Ahona Das Gupta">
+            <div>
+              <h3>Ahona Das Gupta</h3>
+              <div class="qual">B.Com · CS · MBL</div>
+              <div class="role">Founding Partner &amp; Company Secretary</div>
+            </div>
+          </div>
+          <p>Twelve years across corporate governance, FEMA compliance and investment structuring, with a proven track record as KMP, compliance SPOC and Legal Head — having led secretarial functions for companies from high-growth startups to publicly listed entities.</p>
+          <p>Her advisory practice centres on strengthening governance structures, facilitating complex transactions, and transforming regulatory complexity into practical business outcomes.</p>
+          <a href="mailto:Ahona@kpllp.in">Ahona@kpllp.in</a>
+        </article>
+        <article>
+          <div class="top">
+            <img src="__MUDIT__" alt="Mudit Bohara">
+            <div>
+              <h3>Mudit Bohara</h3>
+              <div class="qual">B.A. B.L (Hons)</div>
+              <div class="role">Consulting Partner</div>
+            </div>
+          </div>
+          <p>Over nine years of practice at the Madras High Court, leading dispute resolution, litigation, direct and indirect taxes and intellectual property. Extensive experience in civil, corporate and commercial litigation and arbitration.</p>
+          <p>A member of the Bar Council of Tamil Nadu and Puducherry; previously with Transcorporate Legal Services and Peritum Partners.</p>
+          <a href="mailto:mudit@kpllp.in">mudit@kpllp.in</a>
+        </article>
+      </div>
+    </div></section>
+
+    <section class="sect"><div class="wrap">
+      <div class="head"><h2>Engagement</h2><p>Available for retainer, advisory and project-based mandates.</p></div>
+      <div class="eng">
+        <div><h3>Retainer</h3><p>Ongoing secretarial and compliance cover, with a named partner accountable for your statutory calendar.</p></div>
+        <div><h3>Advisory</h3><p>Counsel on a defined question — governance, structuring, FEMA or a live transaction.</p></div>
+        <div><h3>Project</h3><p>A mandate with a start and a finish: an incorporation, a round, a due diligence.</p></div>
+      </div>
+    </div></section>
+
+    <section class="cta-band"><div class="in">
+      <img src="__MONOLIGHT__" alt="">
+      <h2>Let's talk about<br><em>what's in front of you.</em></h2>
+      <div class="mails">
+        <a href="mailto:Ahona@kpllp.in">Ahona@kpllp.in</a>
+        <a href="mailto:mudit@kpllp.in">mudit@kpllp.in</a>
+        <a href="mailto:contactkpllp@gmail.com">contactkpllp@gmail.com</a>
+      </div>
+    </div></section>
+    <div class="foot"><div class="foot-in"><span>Chennai · Bangalore · Delhi</span><span>© 2026 Kataliance Partners LLP</span></div></div>
+  </div>
+
+  </div>
+</main>
+
+<script>
+(function(){
+  var notes = {
+    A: {
+      txt: '<b>The Register.</b> Classic institutional — the look of an established chambers. Symmetric, engraved, centred; practice areas set as a printed register with leader rules. Signals permanence and authority to boards, family offices and listed-company clients.',
+      sw: ['#0C1730','#B08D3F','#F4F1E8','#D9D3C1'],
+      ty: 'Cormorant Garamond / Lato',
+      rd: 'Established · formal'
+    },
+    B: {
+      txt: '<b>The Filing Desk.</b> Modern professional services — asymmetric, systematic, built around the statutory calendar you actually run. The hero shows real filings and deadlines, so a founder understands the offer in five seconds. Strongest for startup and inbound work.',
+      sw: ['#132443','#9C7A28','#EEF1F5','#FFFFFF'],
+      ty: 'Source Serif 4 / IBM Plex Sans / Mono',
+      rd: 'Precise · approachable'
+    },
+    C: {
+      txt: '<b>Counsel.</b> Dark editorial — oversized Bodoni on near-black, gold hairlines, a hover-revealed practice list. The most distinctive of the three and the least like a typical CS firm site. Best if you want to read as a boutique that charges for judgement, not filings.',
+      sw: ['#070C18','#D4A94F','#E9E5DB','#111A2E'],
+      ty: 'Bodoni Moda / Archivo',
+      rd: 'Boutique · confident'
+    }
+  };
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var note = document.getElementById('note'),
+      sw = document.getElementById('sw'),
+      ty = document.getElementById('ty'),
+      rd = document.getElementById('rd');
+
+  function show(key){
+    tabs.forEach(function(t){
+      var on = t.id === 'tab-' + key;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      panel.classList.toggle('on', on);
+      if (on) { panel.removeAttribute('hidden'); } else { panel.setAttribute('hidden',''); }
+    });
+    var n = notes[key];
+    note.innerHTML = n.txt;
+    sw.innerHTML = n.sw.map(function(c){ return '<i style="background:' + c + '"></i>'; }).join('');
+    ty.textContent = n.ty;
+    rd.textContent = n.rd;
+    try { localStorage.setItem('kp-concept', key); } catch(e){}
+    window.scrollTo({ top: 0, behavior: 'instant' in window ? 'auto' : 'auto' });
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ show(t.id.slice(4)); });
+  });
+
+  var start = 'A';
+  try { var s = localStorage.getItem('kp-concept'); if (s && notes[s]) start = s; } catch(e){}
+  show(start);
+})();
+</script>
